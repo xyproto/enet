@@ -5,18 +5,18 @@ import "fmt"
 var (
 	enableDebug = true
 
-	EneterrUnsupportedFlags  = Eneterror("unsupport flag")
-	EneterrNotImplemented    = Eneterror("not implemented")
-	EneterrInvalidStatus     = Eneterror("invalid status")
-	EneterrInvalidPacketSize = Eneterror("invalid packet size: %v")
-	EneterrAssert            = Eneterror("assert false")
+	ErrUnsupportedFlags  = Error("unsupport flag")
+	ErrNotImplemented    = Error("not implemented")
+	ErrInvalidStatus     = Error("invalid status")
+	ErrInvalidPacketSize = Error("invalid packet size: %v")
+	ErrAssert            = Error("assert false")
 )
 
-type Eneterror string
+type Error string
 
 func assert(v bool) {
 	if !v {
-		panic(EneterrAssert.f())
+		panic(ErrAssert.f())
 	}
 }
 
@@ -26,11 +26,11 @@ func assure(v bool, format string, a ...interface{}) {
 	}
 }
 
-func EnetpanicError(format string, a ...interface{}) {
+func PanicError(format string, a ...interface{}) {
 	panic(fmt.Errorf(format, a...))
 }
 
-func (err Eneterror) f(a ...interface{}) error {
+func (err Error) f(a ...interface{}) error {
 	return fmt.Errorf(string(err), a...)
 }
 

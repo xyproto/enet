@@ -40,8 +40,8 @@ const (
 	TimeoutLimit            = 32   // 30 seconds
 	TimeoutMin              = 5000 // 5 second
 	TimeoutMax              = 30000
-	EnetpingInterval        = 1000 // 1 second
-	EnetbpsInterval         = 1000 // 1 second
+	PingInterval            = 1000 // 1 second
+	BPSInterval             = 1000 // 1 second
 )
 
 const (
@@ -57,8 +57,8 @@ const (
 const PeerIDAny uint32 = 0xffffffff
 
 /* uncompatiable with enet origin protocol
-EnetcmdUnsequenced    // +unseq flag
-EnetcmdBandwidthlimit // ack flag
-EnetcmdThrottle       // ack flag
-EnetcmdUnreliableFragment
+CmdUnsequenced    // +unseq flag
+CmdBandwidthlimit // ack flag
+CmdThrottle       // ack flag
+CmdUnreliableFragment
 */
