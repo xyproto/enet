@@ -43,6 +43,7 @@ const (
 	EnetpingInterval            = 1000 // 1 second
 	EnetbpsInterval             = 1000 // 1 second
 )
+
 const (
 	ChannelIDNone uint8 = 0xff
 	ChannelIDAll        = 0xfe
@@ -52,6 +53,7 @@ const (
 	EnetpeerConnectResultDuplicated = 1
 	EnetpeerDisconnectResultInvalid
 )
+
 const EnetpeerIDAny uint32 = 0xffffffff
 
 /* uncompatiable with enet origin protocol
