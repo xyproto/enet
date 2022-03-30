@@ -91,17 +91,17 @@ func (host *Enethost) Run(sigs chan os.Signal) {
 }
 
 func (host *Enethost) Connect(ep string) {
-	host.outgoing <- &EnethostOutgoingCommand{ep, nil, EnetChannelIDAll, true}
+	host.outgoing <- &EnethostOutgoingCommand{ep, nil, ChannelIDAll, true}
 }
 func (host *Enethost) Disconnect(ep string) {
-	host.outgoing <- &EnethostOutgoingCommand{ep, nil, EnetChannelIDNone, true}
+	host.outgoing <- &EnethostOutgoingCommand{ep, nil, ChannelIDNone, true}
 }
 
 func (host *Enethost) Write(endp string, chanid uint8, dat []byte) {
 	host.outgoing <- &EnethostOutgoingCommand{endp, dat, chanid, true}
 }
 func (host *Enethost) Stop() {
-	host.whenSocketIncomingPacket(EnetProtocolHeader{}, EnetPacketHeader{}, nil, nil)
+	host.whenSocketIncomingPacket(EnetProtocolHeader{}, PacketHeader{}, nil, nil)
 }
 
 // run in another routine
@@ -125,7 +125,7 @@ func (host *Enethost) runSocket() {
 			binary.Read(reader, binary.BigEndian, &crc32)
 		}
 
-		var pkhdr EnetPacketHeader
+		var pkhdr PacketHeader
 		for i := uint8(0); err == nil && i < phdr.PacketCount; i++ {
 			err = binary.Read(reader, binary.BigEndian, &pkhdr)
 			payload := make([]byte, int(pkhdr.Size)-binary.Size(pkhdr))
@@ -139,7 +139,7 @@ func (host *Enethost) runSocket() {
 	}
 	// socket may be not closed yet
 	if host.flags&EnethostFlagsStopped == 0 {
-		host.whenSocketIncomingPacket(EnetProtocolHeader{}, EnetPacketHeader{}, nil, nil)
+		host.whenSocketIncomingPacket(EnetProtocolHeader{}, PacketHeader{}, nil, nil)
 	}
 }
 
@@ -188,7 +188,7 @@ func (host *Enethost) doSend(dat []byte, addr *net.UDPAddr) {
 // move rcvd socket datagrams to run routine
 // payload or addr is nil means socket recv breaks
 func (host *Enethost) whenSocketIncomingPacket(phdr EnetProtocolHeader,
-	pkhdr EnetPacketHeader,
+	pkhdr PacketHeader,
 	payload []byte,
 	addr *net.UDPAddr) (err error) {
 	host.incoming <- &EnethostIncomingCommand{
@@ -210,8 +210,8 @@ func (host *Enethost) connectPeer(ep string) {
 	}
 	peer.flags |= EnetpeerFlagsSynSending
 	hdr, syn := EnetpacketSynDefault()
-	ch := peer.channelFromID(EnetChannelIDNone)
-	peer.outgoingPend(ch, hdr, EnetPacketFragment{}, EnetpacketSynEncode(syn))
+	ch := peer.channelFromID(ChannelIDNone)
+	peer.outgoingPend(ch, hdr, PacketFragment{}, EnetpacketSynEncode(syn))
 }
 func (host *Enethost) disconnectPeer(ep string) {
 	debugf("disconnecting %v\n", ep)
@@ -225,8 +225,8 @@ func (host *Enethost) disconnectPeer(ep string) {
 	}
 	hdr := EnetpacketFinDefault()
 	peer.flags |= EnetpeerFlagsFinSending
-	ch := peer.channelFromID(EnetChannelIDNone)
-	peer.outgoingPend(ch, hdr, EnetPacketFragment{}, []byte{})
+	ch := peer.channelFromID(ChannelIDNone)
+	peer.outgoingPend(ch, hdr, PacketFragment{}, []byte{})
 }
 func (host *Enethost) resetPeer(ep string) {
 	peer := host.peerFromEndpoint(ep, EnetpeerIDAny)
@@ -234,10 +234,10 @@ func (host *Enethost) resetPeer(ep string) {
 }
 func (host *Enethost) whenOutgoingHostCommand(item *EnethostOutgoingCommand) {
 	if item.payload == nil {
-		if item.chanid == EnetChannelIDAll { // connect request
+		if item.chanid == ChannelIDAll { // connect request
 			host.connectPeer(item.peer)
 		}
-		if item.chanid == EnetChannelIDNone { // disconnect
+		if item.chanid == ChannelIDNone { // disconnect
 			host.disconnectPeer(item.peer)
 		}
 		return
@@ -266,7 +266,7 @@ func (host *Enethost) whenOutgoingHostCommand(item *EnethostOutgoingCommand) {
 
 	} else {
 		pkhdr := EnetpacketReliableDefault(item.chanid, l)
-		peer.outgoingPend(ch, pkhdr, EnetPacketFragment{}, item.payload)
+		peer.outgoingPend(ch, pkhdr, PacketFragment{}, item.payload)
 	}
 	//	ch.doSend(peer)
 	return
@@ -296,13 +296,13 @@ func (host *Enethost) whenIncomingHostCommand(item *EnethostIncomingCommand) {
 		ack.SN = item.packetHeader.SN
 		ack.SntTime = item.protocolHeader.SntTime
 		debugf("ack packet %v, typ:%v\n", ack.SN, item.packetHeader.Type)
-		peer.outgoingPend(ch, hdr, EnetPacketFragment{}, EnetpacketACKEncode(ack))
+		peer.outgoingPend(ch, hdr, PacketFragment{}, EnetpacketACKEncode(ack))
 	}
 	WhenEnetpacketIncomingDisp[item.packetHeader.Type](peer, item.packetHeader, item.payload)
 	//	ch.doSend(peer)
 }
 
-type whenEnetpacketIncomingDisp func(peer *Enetpeer, hdr EnetPacketHeader, payload []byte)
+type whenEnetpacketIncomingDisp func(peer *Enetpeer, hdr PacketHeader, payload []byte)
 
 var WhenEnetpacketIncomingDisp = []whenEnetpacketIncomingDisp{
 	(*Enetpeer).whenUnknown,
@@ -366,7 +366,7 @@ const (
 
 type EnethostIncomingCommand struct {
 	protocolHeader EnetProtocolHeader
-	packetHeader   EnetPacketHeader // .size == len(payload)
+	packetHeader   PacketHeader // .size == len(payload)
 	payload        []byte
 	endpoint       *net.UDPAddr
 }

@@ -2,9 +2,9 @@ package enet
 
 const channelPacketCount = 256
 
-type EnetChannelItem struct {
-	header   EnetPacketHeader
-	fragment EnetPacketFragment // used if header.cmd == EnetpacketFragment
+type ChannelItem struct {
+	header   PacketHeader
+	fragment PacketFragment // used if header.cmd == EnetpacketFragment
 	payload  []byte             // not include packet-header
 	retries  int                // sent times for outgoing packet
 	acked    int                // acked times
@@ -13,11 +13,11 @@ type EnetChannelItem struct {
 
 // outgoing: ->end ..untransfered.. next ..transfered.. begin ->
 // incoming: <-begin ..acked.. next ..unacked.. end<-
-type EnetChannel struct {
+type Channel struct {
 	NextSN        uint32 // next reliable packet number for sent
 	NextUSN       uint32 // next unsequenced packet number for sent
-	outgoing      [channelPacketCount]*EnetChannelItem
-	incoming      [channelPacketCount]*EnetChannelItem
+	outgoing      [channelPacketCount]*ChannelItem
+	incoming      [channelPacketCount]*ChannelItem
 	outgoingBegin uint32 // the first one is not acked yet
 	incomingBegin uint32 // the first one has be received
 	outgoingEnd   uint32 // the last one is not acked yet
@@ -28,7 +28,7 @@ type EnetChannel struct {
 	intransBytes  uint32
 }
 
-func (ch *EnetChannel) outgoingPend(item *EnetChannelItem) {
+func (ch *Channel) outgoingPend(item *ChannelItem) {
 	item.header.SN = ch.NextSN
 	ch.NextSN++
 	debugf("channel outgoing %v, typ: %v\n", item.header.SN, item.header.Type)
@@ -43,7 +43,7 @@ func (ch *EnetChannel) outgoingPend(item *EnetChannelItem) {
 }
 
 // what if outgoingWrap
-func (ch *EnetChannel) outgoingACK(sn uint32) {
+func (ch *Channel) outgoingACK(sn uint32) {
 	debugf("outgoing ack %v\n", sn)
 	if sn < ch.outgoingBegin || sn >= ch.outgoingEnd { // already acked or error
 		debugf("channel-ack abandoned %v\n", sn)
@@ -56,7 +56,7 @@ func (ch *EnetChannel) outgoingACK(sn uint32) {
 	v.acked++
 }
 
-func (ch *EnetChannel) outgoingSlide() (item *EnetChannelItem) {
+func (ch *Channel) outgoingSlide() (item *ChannelItem) {
 	assert(ch.outgoingBegin <= ch.outgoingEnd)
 	if ch.outgoingBegin >= ch.outgoingEnd {
 		return
@@ -77,7 +77,7 @@ func (ch *EnetChannel) outgoingSlide() (item *EnetChannelItem) {
 }
 
 // the first time send out packet
-func (ch *EnetChannel) outgoingDoTrans() (item *EnetChannelItem) {
+func (ch *Channel) outgoingDoTrans() (item *ChannelItem) {
 	assert(ch.outgoingNext <= ch.outgoingEnd)
 	if ch.outgoingNext >= ch.outgoingEnd {
 		return
@@ -93,7 +93,7 @@ func (ch *EnetChannel) outgoingDoTrans() (item *EnetChannelItem) {
 }
 
 // may be retransed packet
-func (ch *EnetChannel) incomingTrans(item *EnetChannelItem) {
+func (ch *Channel) incomingTrans(item *ChannelItem) {
 	if item.header.SN < ch.incomingBegin {
 		return
 	}
@@ -114,7 +114,7 @@ func (ch *EnetChannel) incomingTrans(item *EnetChannelItem) {
 }
 
 // when do ack incoming packets
-func (ch *EnetChannel) incomingACK(sn uint32) {
+func (ch *Channel) incomingACK(sn uint32) {
 	if sn < ch.incomingBegin || sn >= ch.incomingEnd { // reack packet not in wnd
 		return
 	}
@@ -125,7 +125,7 @@ func (ch *EnetChannel) incomingACK(sn uint32) {
 }
 
 // called after incoming-ack
-func (ch *EnetChannel) incomingSlide() (item *EnetChannelItem) { // return value may be ignored
+func (ch *Channel) incomingSlide() (item *ChannelItem) { // return value may be ignored
 	if ch.incomingBegin >= ch.incomingEnd {
 		return
 	}
@@ -168,7 +168,7 @@ func (ch *EnetChannel) incomingSlide() (item *EnetChannelItem) { // return value
 	return
 }
 
-func (ch *EnetChannel) doSend(peer *Enetpeer) {
+func (ch *Channel) doSend(peer *Enetpeer) {
 	if ch.intransBytes > peer.wndSize { // window is overflow
 		return
 	}

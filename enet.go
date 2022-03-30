@@ -13,7 +13,7 @@ type EnetProtocolHeader struct {
 type EnetCrc32Header struct {
 	CRC32 uint32
 }
-type EnetPacketHeader struct {
+type PacketHeader struct {
 	Type      uint8  // EnetpacketTypeXxx
 	Flags     uint8  // Needack, Forcefin, EnetpacketHeaderFlagsXxx
 	ChannelID uint8  // [0,n), or 0xff; oxff : control channel
@@ -24,14 +24,14 @@ type EnetPacketHeader struct {
 
 //cmdTypeACK = 1
 // flags must be zero
-type EnetPacketAck struct {
+type PacketAck struct {
 	SN      uint32 // rcvd-sn // not the next sn
 	SntTime uint32 // rcvd sent time
 }
 
 //cmdTypeSyn = 2
 // flags = EnetpacketNeedack
-type EnetPacketSyn struct { // ack by conack
+type PacketSyn struct { // ack by conack
 	PeerID           uint16 // zero, whose id write the packet
 	MTU              uint16 // default = 1200
 	WndSize          uint32 // local recv window size, 0x8000
@@ -45,29 +45,29 @@ type EnetPacketSyn struct { // ack by conack
 
 //cmdTypeSynack = 3
 // flags = EnetpacketNeedack
-type EnetPacketSynAck EnetPacketSyn
+type PacketSynAck PacketSyn
 
 //cmdTypeFin = 4
 // flags = EnetpacketFlagsForcefin if disconnect unconnected peer
-type EnetPacketFin struct{}
+type PacketFin struct{}
 
 // cmdType = 5
-type EnetPacketPing struct{}
+type PacketPing struct{}
 
 //cmdTypeReliable = 6
 // flags= EnetpacketHeaderFlagsNeedack
-type EnetPacketReliable struct{}
+type PacketReliable struct{}
 
 //cmdTypeUnreliable = 7
 // flags = EnetpacketHeaderFlagsNone
-type EnetPacketUnreliable struct {
+type PacketUnreliable struct {
 	SN uint32 // unreliable sequence number, filled with channel.nextUSN
 }
 
 //cmdTypeFragment = 8
 // [offset, length) of the packet sn
 // packet was splitted into fragmentCount parts
-type EnetPacketFragment struct {
+type PacketFragment struct {
 	SN     uint32 // start sequence number
 	Count  uint32 // fragment counts
 	Index  uint32 // index of current fragment

@@ -44,8 +44,8 @@ const (
 	EnetbpsInterval             = 1000 // 1 second
 )
 const (
-	EnetChannelIDNone uint8 = 0xff
-	EnetChannelIDAll        = 0xfe
+	ChannelIDNone uint8 = 0xff
+	ChannelIDAll        = 0xfe
 )
 
 const (
