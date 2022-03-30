@@ -17,7 +17,7 @@ type EnetHost struct {
 	outgoing     chan *EnetHostOutgoingCommand
 	tick         <-chan time.Time
 	peers        map[string]*Enetpeer
-	timers       EnetTimerQueue
+	timers       TimerQueue
 	nextClientid uint32 // positive client id seed
 	flags        int    // EnetHostFlagsXxx
 	rcvdBytes    int
@@ -45,7 +45,7 @@ func NewHost(addr string) (Host, error) {
 		outgoing: make(chan *EnetHostOutgoingCommand, 16),
 		tick:     time.Tick(time.Millisecond * EnetdefaultTickMs),
 		peers:    make(map[string]*Enetpeer),
-		timers:   newEnetTimerQueue(),
+		timers:   newTimerQueue(),
 	}
 	if err == nil {
 		host.socket, err = net.ListenUDP("udp", ep)
@@ -103,7 +103,7 @@ func (host *EnetHost) Write(endp string, chanid uint8, dat []byte) {
 }
 
 func (host *EnetHost) Stop() {
-	host.whenSocketIncomingPacket(EnetProtocolHeader{}, PacketHeader{}, nil, nil)
+	host.whenSocketIncomingPacket(ProtocolHeader{}, PacketHeader{}, nil, nil)
 }
 
 // run in another routine
@@ -119,11 +119,11 @@ func (host *EnetHost) runSocket() {
 		}
 		dat := buf[:n]
 		reader := bytes.NewReader(dat)
-		var phdr EnetProtocolHeader
+		var phdr ProtocolHeader
 		binary.Read(reader, binary.BigEndian, &phdr)
 
 		if phdr.Flags&EnetprotocolFlagsCrc != 0 {
-			var crc32 EnetCrc32Header
+			var crc32 CRC32Header
 			binary.Read(reader, binary.BigEndian, &crc32)
 		}
 
@@ -141,7 +141,7 @@ func (host *EnetHost) runSocket() {
 	}
 	// socket may be not closed yet
 	if host.flags&EnetHostFlagsStopped == 0 {
-		host.whenSocketIncomingPacket(EnetProtocolHeader{}, PacketHeader{}, nil, nil)
+		host.whenSocketIncomingPacket(ProtocolHeader{}, PacketHeader{}, nil, nil)
 	}
 }
 
@@ -191,7 +191,7 @@ func (host *EnetHost) doSend(dat []byte, addr *net.UDPAddr) {
 
 // move rcvd socket datagrams to run routine
 // payload or addr is nil means socket recv breaks
-func (host *EnetHost) whenSocketIncomingPacket(phdr EnetProtocolHeader,
+func (host *EnetHost) whenSocketIncomingPacket(phdr ProtocolHeader,
 	pkhdr PacketHeader,
 	payload []byte,
 	addr *net.UDPAddr) (err error) {
@@ -377,7 +377,7 @@ const (
 )
 
 type EnetHostIncomingCommand struct {
-	protocolHeader EnetProtocolHeader
+	protocolHeader ProtocolHeader
 	packetHeader   PacketHeader // .size == len(payload)
 	payload        []byte
 	endpoint       *net.UDPAddr

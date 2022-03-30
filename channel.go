@@ -8,7 +8,7 @@ type ChannelItem struct {
 	payload  []byte         // not include packet-header
 	retries  int            // sent times for outgoing packet
 	acked    int            // acked times
-	retrans  *EnetTimerItem // retrans timer
+	retrans  *TimerItem     // retrans timer
 }
 
 // outgoing: ->end ..untransfered.. next ..transfered.. begin ->

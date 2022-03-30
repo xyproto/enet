@@ -3,14 +3,14 @@ package enet
 /*
 udpHeader | protocolHeader | crc32Header? | ( packetHeader | payload )+
 */
-type EnetProtocolHeader struct {
+type ProtocolHeader struct {
 	PeerID      uint16 // target peerid, not used
 	Flags       uint8  // 0xcc : use crc32 header, default 0
 	PacketCount uint8  // Packets in this datagram
 	SntTime     uint32 // milli-second, sent-time
 	ClientID    uint32 // client-id? , server would fill client's id, not his own
 }
-type EnetCrc32Header struct {
+type CRC32Header struct {
 	CRC32 uint32
 }
 type PacketHeader struct {

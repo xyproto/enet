@@ -4,14 +4,14 @@ import (
 	"container/heap"
 )
 
-type EnetTimerCallback func()
-type EnetTimerItem struct {
+type TimerCallback func()
+type TimerItem struct {
 	weight   int64
-	callback EnetTimerCallback
+	callback TimerCallback
 	index    int // heap index
 }
-type priorityQueue []*EnetTimerItem
-type EnetTimerQueue struct{ *priorityQueue }
+type priorityQueue []*TimerItem
+type TimerQueue struct{ *priorityQueue }
 
 // sort interface
 
@@ -26,7 +26,7 @@ func (pq priorityQueue) Swap(i, j int) {
 // heap interface
 
 func (pq *priorityQueue) Push(x interface{}) {
-	v := x.(*EnetTimerItem)
+	v := x.(*TimerItem)
 	v.index = len(*pq)
 	*pq = append(*pq, v)
 }
@@ -40,29 +40,29 @@ func (pq *priorityQueue) Pop() interface{} {
 }
 
 // timer queue interface
-func newEnetTimerQueue() EnetTimerQueue {
+func newTimerQueue() TimerQueue {
 	timers := make(priorityQueue, 0)
 	heap.Init(&timers)
-	return EnetTimerQueue{&timers}
+	return TimerQueue{&timers}
 }
-func (timers EnetTimerQueue) push(deadline int64, cb EnetTimerCallback) *EnetTimerItem {
-	v := &EnetTimerItem{deadline, cb, -1}
+func (timers TimerQueue) push(deadline int64, cb TimerCallback) *TimerItem {
+	v := &TimerItem{deadline, cb, -1}
 	heap.Push(timers, v)
 	return v
 }
 
-func (timers EnetTimerQueue) pop(now int64) EnetTimerCallback {
+func (timers TimerQueue) pop(now int64) TimerCallback {
 	if timers.Len() == 0 {
 		return nil
 	}
 	if (*timers.priorityQueue)[0].weight < now {
-		top := heap.Pop(timers).(*EnetTimerItem)
+		top := heap.Pop(timers).(*TimerItem)
 		return top.callback
 	}
 	return nil
 }
 
-func (timers EnetTimerQueue) remove(idx int) {
+func (timers TimerQueue) remove(idx int) {
 	assert(idx < timers.Len())
 	heap.Remove(timers, idx)
 }

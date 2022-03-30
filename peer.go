@@ -74,7 +74,7 @@ func newEnetpeer(addr *net.UDPAddr, host *EnetHost) *Enetpeer {
 
 func (peer *Enetpeer) doSend(hdr PacketHeader, frag PacketFragment, dat []byte) {
 	writer := bytes.NewBuffer(nil)
-	phdr := EnetProtocolHeader{0, 0, 1, uint32(peer.host.now), peer.clientid}
+	phdr := ProtocolHeader{0, 0, 1, uint32(peer.host.now), peer.clientid}
 	binary.Write(writer, binary.BigEndian, phdr)
 	binary.Write(writer, binary.BigEndian, &hdr)
 	if hdr.Type == PacketTypeFragment {
