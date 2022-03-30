@@ -1,4 +1,6 @@
-enet
+ENet
 ====
 
-golang enet protocol implementation
+Implementation of the ENet protocol in Go.
+
+This is a fork of github.com/hzane/enet.
