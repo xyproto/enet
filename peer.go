@@ -41,10 +41,10 @@ type Enetpeer struct {
 	timeoutLimit     int64
 	timeoutMin       int64
 	timeoutMax       int64
-	host             *Enethost
+	host             *EnetHost
 }
 
-func newEnetpeer(addr *net.UDPAddr, host *Enethost) *Enetpeer {
+func newEnetpeer(addr *net.UDPAddr, host *EnetHost) *Enetpeer {
 	debugf("new peer %v\n", addr)
 	cid := host.nextClientid
 	host.nextClientid++

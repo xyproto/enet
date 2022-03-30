@@ -9,17 +9,17 @@ import (
 	"time"
 )
 
-type Enethost struct {
+type EnetHost struct {
 	fail         int // socket
 	socket       *net.UDPConn
 	addr         *net.UDPAddr
-	incoming     chan *EnethostIncomingCommand
-	outgoing     chan *EnethostOutgoingCommand
+	incoming     chan *EnetHostIncomingCommand
+	outgoing     chan *EnetHostOutgoingCommand
 	tick         <-chan time.Time
 	peers        map[string]*Enetpeer
 	timers       EnetTimerQueue
 	nextClientid uint32 // positive client id seed
-	flags        int    // EnethostFlagsXxx
+	flags        int    // EnetHostFlagsXxx
 	rcvdBytes    int
 	sentBytes    int
 	rcvdBps      int
@@ -38,11 +38,11 @@ func NewHost(addr string) (Host, error) {
 	// if failed, host will bind to a random address
 	ep, err := net.ResolveUDPAddr("udp", addr)
 
-	host := &Enethost{
+	host := &EnetHost{
 		fail:     0,
 		addr:     ep,
-		incoming: make(chan *EnethostIncomingCommand, 16),
-		outgoing: make(chan *EnethostOutgoingCommand, 16),
+		incoming: make(chan *EnetHostIncomingCommand, 16),
+		outgoing: make(chan *EnetHostOutgoingCommand, 16),
 		tick:     time.Tick(time.Millisecond * EnetdefaultTickMs),
 		peers:    make(map[string]*Enetpeer),
 		timers:   newEnetTimerQueue(),
@@ -51,7 +51,7 @@ func NewHost(addr string) (Host, error) {
 		host.socket, err = net.ListenUDP("udp", ep)
 	}
 	if err != nil {
-		host.flags |= EnethostFlagsStopped
+		host.flags |= EnetHostFlagsStopped
 	}
 	if host.addr == nil && host.socket != nil {
 		host.addr = host.socket.LocalAddr().(*net.UDPAddr)
@@ -65,11 +65,11 @@ func NewHost(addr string) (Host, error) {
 // - outgoing data
 // - exit signal
 // - timer tick
-func (host *Enethost) Run(sigs chan os.Signal) {
-	host.flags |= EnethostFlagsRunning
+func (host *EnetHost) Run(sigs chan os.Signal) {
+	host.flags |= EnetHostFlagsRunning
 	go host.runSocket()
 	debugf("running...\n")
-	for host.flags&EnethostFlagsStopped == 0 {
+	for host.flags&EnetHostFlagsStopped == 0 {
 		select {
 		case item := <-host.incoming:
 			host.now = unixtimeNow()
@@ -87,25 +87,25 @@ func (host *Enethost) Run(sigs chan os.Signal) {
 		}
 	}
 	debugf("%v run exits\n", host.addr)
-	host.flags &= ^EnethostFlagsRunning
+	host.flags &= ^EnetHostFlagsRunning
 }
 
-func (host *Enethost) Connect(ep string) {
-	host.outgoing <- &EnethostOutgoingCommand{ep, nil, ChannelIDAll, true}
+func (host *EnetHost) Connect(ep string) {
+	host.outgoing <- &EnetHostOutgoingCommand{ep, nil, ChannelIDAll, true}
 }
-func (host *Enethost) Disconnect(ep string) {
-	host.outgoing <- &EnethostOutgoingCommand{ep, nil, ChannelIDNone, true}
+func (host *EnetHost) Disconnect(ep string) {
+	host.outgoing <- &EnetHostOutgoingCommand{ep, nil, ChannelIDNone, true}
 }
 
-func (host *Enethost) Write(endp string, chanid uint8, dat []byte) {
-	host.outgoing <- &EnethostOutgoingCommand{endp, dat, chanid, true}
+func (host *EnetHost) Write(endp string, chanid uint8, dat []byte) {
+	host.outgoing <- &EnetHostOutgoingCommand{endp, dat, chanid, true}
 }
-func (host *Enethost) Stop() {
+func (host *EnetHost) Stop() {
 	host.whenSocketIncomingPacket(EnetProtocolHeader{}, PacketHeader{}, nil, nil)
 }
 
 // run in another routine
-func (host *Enethost) runSocket() {
+func (host *EnetHost) runSocket() {
 	buf := make([]byte, EnetudpSize) // large enough
 
 	sock := host.socket
@@ -138,32 +138,32 @@ func (host *Enethost) runSocket() {
 
 	}
 	// socket may be not closed yet
-	if host.flags&EnethostFlagsStopped == 0 {
+	if host.flags&EnetHostFlagsStopped == 0 {
 		host.whenSocketIncomingPacket(EnetProtocolHeader{}, PacketHeader{}, nil, nil)
 	}
 }
 
-func (host *Enethost) whenSignal(sig os.Signal) {
+func (host *EnetHost) whenSignal(sig os.Signal) {
 	host.close()
 }
-func (host *Enethost) close() {
-	if host.flags&EnethostFlagsStopped != 0 {
+func (host *EnetHost) close() {
+	if host.flags&EnetHostFlagsStopped != 0 {
 		return
 	}
-	host.flags |= EnethostFlagsStopped
+	host.flags |= EnetHostFlagsStopped
 
 	assert(host.socket != nil)
-	if host.flags&EnethostFlagsSockClosed == 0 {
-		host.flags |= EnethostFlagsSockClosed
+	if host.flags&EnetHostFlagsSockClosed == 0 {
+		host.flags |= EnetHostFlagsSockClosed
 		host.socket.Close()
 	}
 
 	// disable tick func
-	host.flags |= EnethostFlagsTickClosed
+	host.flags |= EnetHostFlagsTickClosed
 	debugf("%v closed\n", host.addr)
 }
-func (host *Enethost) whenTick(t time.Time) {
-	if host.flags&EnethostFlagsTickClosed != 0 {
+func (host *EnetHost) whenTick(t time.Time) {
+	if host.flags&EnetHostFlagsTickClosed != 0 {
 		return
 	}
 	host.updateStatis()
@@ -174,7 +174,7 @@ func (host *Enethost) whenTick(t time.Time) {
 }
 
 // push data to socket
-func (host *Enethost) doSend(dat []byte, addr *net.UDPAddr) {
+func (host *EnetHost) doSend(dat []byte, addr *net.UDPAddr) {
 	assert(host.socket != nil)
 	host.updateSNtStatis(len(dat))
 	n, err := host.socket.WriteToUDP(dat, addr)
@@ -187,11 +187,11 @@ func (host *Enethost) doSend(dat []byte, addr *net.UDPAddr) {
 
 // move rcvd socket datagrams to run routine
 // payload or addr is nil means socket recv breaks
-func (host *Enethost) whenSocketIncomingPacket(phdr EnetProtocolHeader,
+func (host *EnetHost) whenSocketIncomingPacket(phdr EnetProtocolHeader,
 	pkhdr PacketHeader,
 	payload []byte,
 	addr *net.UDPAddr) (err error) {
-	host.incoming <- &EnethostIncomingCommand{
+	host.incoming <- &EnetHostIncomingCommand{
 		phdr,
 		pkhdr,
 		payload,
@@ -199,7 +199,7 @@ func (host *Enethost) whenSocketIncomingPacket(phdr EnetProtocolHeader,
 	}
 	return
 }
-func (host *Enethost) connectPeer(ep string) {
+func (host *EnetHost) connectPeer(ep string) {
 	debugf("connecting %v\n", ep)
 	cid := host.nextClientid
 	host.nextClientid++
@@ -213,7 +213,7 @@ func (host *Enethost) connectPeer(ep string) {
 	ch := peer.channelFromID(ChannelIDNone)
 	peer.outgoingPend(ch, hdr, PacketFragment{}, EnetpacketSynEncode(syn))
 }
-func (host *Enethost) disconnectPeer(ep string) {
+func (host *EnetHost) disconnectPeer(ep string) {
 	debugf("disconnecting %v\n", ep)
 	peer := host.peerFromEndpoint(ep, EnetpeerIDAny)
 	if peer.flags&EnetpeerFlagsEstablished == 0 {
@@ -228,11 +228,11 @@ func (host *Enethost) disconnectPeer(ep string) {
 	ch := peer.channelFromID(ChannelIDNone)
 	peer.outgoingPend(ch, hdr, PacketFragment{}, []byte{})
 }
-func (host *Enethost) resetPeer(ep string) {
+func (host *EnetHost) resetPeer(ep string) {
 	peer := host.peerFromEndpoint(ep, EnetpeerIDAny)
 	host.destroyPeer(peer)
 }
-func (host *Enethost) whenOutgoingHostCommand(item *EnethostOutgoingCommand) {
+func (host *EnetHost) whenOutgoingHostCommand(item *EnetHostOutgoingCommand) {
 	if item.payload == nil {
 		if item.chanid == ChannelIDAll { // connect request
 			host.connectPeer(item.peer)
@@ -272,7 +272,7 @@ func (host *Enethost) whenOutgoingHostCommand(item *EnethostOutgoingCommand) {
 	return
 }
 
-func (host *Enethost) whenIncomingHostCommand(item *EnethostIncomingCommand) {
+func (host *EnetHost) whenIncomingHostCommand(item *EnetHostIncomingCommand) {
 	if item == nil || item.payload == nil {
 		host.close()
 		return
@@ -321,31 +321,31 @@ var WhenEnetpacketIncomingDisp = []whenEnetpacketIncomingDisp{
 	(*Enetpeer).whenUnknown,
 }
 
-func (host *Enethost) destroyPeer(peer *Enetpeer) {
+func (host *EnetHost) destroyPeer(peer *Enetpeer) {
 	id := peer.remoteAddr.String()
 	delete(host.peers, id)
 	debugf("release peer %v\n", id)
 }
-func (host *Enethost) SetConnectionHandler(h PeerEventHandler) {
+func (host *EnetHost) SetConnectionHandler(h PeerEventHandler) {
 	host.notifyConnected = h
 }
-func (host *Enethost) SetDisconnectionHandler(h PeerEventHandler) {
+func (host *EnetHost) SetDisconnectionHandler(h PeerEventHandler) {
 	host.notifyDisconnected = h
 }
 
-func (host *Enethost) SetDataHandler(h DataEventHandler) {
+func (host *EnetHost) SetDataHandler(h DataEventHandler) {
 	host.notifyData = h
 }
-func (host *Enethost) updateRcvStatis(rcvd int) {
+func (host *EnetHost) updateRcvStatis(rcvd int) {
 	host.rcvdBytes += rcvd
 	host.lastRecvTime = host.now
 }
-func (host *Enethost) updateSNtStatis(snt int) {
+func (host *EnetHost) updateSNtStatis(snt int) {
 	host.sentBytes += snt
 	host.lastSendTime = host.now
 }
 
-func (host *Enethost) updateStatis() {
+func (host *EnetHost) updateStatis() {
 	itv := int(host.now - host.updateEpoc)
 	host.rcvdBps = host.rcvdBytes * 1000 / itv
 	host.sentBps = host.sentBytes * 1000 / itv
@@ -357,31 +357,31 @@ func (host *Enethost) updateStatis() {
 }
 
 const (
-	EnethostFlagsNone = 1 << iota
-	EnethostFlagsStopped
-	EnethostFlagsRunning
-	EnethostFlagsSockClosed
-	EnethostFlagsTickClosed
+	EnetHostFlagsNone = 1 << iota
+	EnetHostFlagsStopped
+	EnetHostFlagsRunning
+	EnetHostFlagsSockClosed
+	EnetHostFlagsTickClosed
 )
 
-type EnethostIncomingCommand struct {
+type EnetHostIncomingCommand struct {
 	protocolHeader EnetProtocolHeader
 	packetHeader   PacketHeader // .size == len(payload)
 	payload        []byte
 	endpoint       *net.UDPAddr
 }
-type EnethostOutgoingCommand struct {
+type EnetHostOutgoingCommand struct {
 	peer     string
 	payload  []byte
 	chanid   uint8
 	reliable bool
 }
 
-func (host *Enethost) peerFromEndpoint(ep string, clientid uint32) *Enetpeer {
+func (host *EnetHost) peerFromEndpoint(ep string, clientid uint32) *Enetpeer {
 	addr, _ := net.ResolveUDPAddr("udp", ep)
 	return host.peerFromAddr(addr, clientid)
 }
-func (host *Enethost) peerFromAddr(ep *net.UDPAddr, clientid uint32) *Enetpeer {
+func (host *EnetHost) peerFromAddr(ep *net.UDPAddr, clientid uint32) *Enetpeer {
 	assert(ep != nil)
 	id := ep.String()
 	peer, ok := host.peers[id]
