@@ -13,8 +13,8 @@ type EnetHost struct {
 	fail         int // socket
 	socket       *net.UDPConn
 	addr         *net.UDPAddr
-	incoming     chan *EnetHostIncomingCommand
-	outgoing     chan *EnetHostOutgoingCommand
+	incoming     chan *HostIncomingCommand
+	outgoing     chan *HostOutgoingCommand
 	tick         <-chan time.Time
 	peers        map[string]*Peer
 	timers       TimerQueue
@@ -41,8 +41,8 @@ func NewHost(addr string) (Host, error) {
 	host := &EnetHost{
 		fail:     0,
 		addr:     ep,
-		incoming: make(chan *EnetHostIncomingCommand, 16),
-		outgoing: make(chan *EnetHostOutgoingCommand, 16),
+		incoming: make(chan *HostIncomingCommand, 16),
+		outgoing: make(chan *HostOutgoingCommand, 16),
 		tick:     time.Tick(time.Millisecond * DefaultTickMs),
 		peers:    make(map[string]*Peer),
 		timers:   newTimerQueue(),
@@ -91,15 +91,15 @@ func (host *EnetHost) Run(sigs chan os.Signal) {
 }
 
 func (host *EnetHost) Connect(ep string) {
-	host.outgoing <- &EnetHostOutgoingCommand{ep, nil, ChannelIDAll, true}
+	host.outgoing <- &HostOutgoingCommand{ep, nil, ChannelIDAll, true}
 }
 
 func (host *EnetHost) Disconnect(ep string) {
-	host.outgoing <- &EnetHostOutgoingCommand{ep, nil, ChannelIDNone, true}
+	host.outgoing <- &HostOutgoingCommand{ep, nil, ChannelIDNone, true}
 }
 
 func (host *EnetHost) Write(endp string, chanid uint8, dat []byte) {
-	host.outgoing <- &EnetHostOutgoingCommand{endp, dat, chanid, true}
+	host.outgoing <- &HostOutgoingCommand{endp, dat, chanid, true}
 }
 
 func (host *EnetHost) Stop() {
@@ -195,7 +195,7 @@ func (host *EnetHost) whenSocketIncomingPacket(phdr ProtocolHeader,
 	pkhdr PacketHeader,
 	payload []byte,
 	addr *net.UDPAddr) (err error) {
-	host.incoming <- &EnetHostIncomingCommand{
+	host.incoming <- &HostIncomingCommand{
 		phdr,
 		pkhdr,
 		payload,
@@ -240,7 +240,7 @@ func (host *EnetHost) resetPeer(ep string) {
 	host.destroyPeer(peer)
 }
 
-func (host *EnetHost) whenOutgoingHostCommand(item *EnetHostOutgoingCommand) {
+func (host *EnetHost) whenOutgoingHostCommand(item *HostOutgoingCommand) {
 	if item.payload == nil {
 		if item.chanid == ChannelIDAll { // connect request
 			host.connectPeer(item.peer)
@@ -280,7 +280,7 @@ func (host *EnetHost) whenOutgoingHostCommand(item *EnetHostOutgoingCommand) {
 	return
 }
 
-func (host *EnetHost) whenIncomingHostCommand(item *EnetHostIncomingCommand) {
+func (host *EnetHost) whenIncomingHostCommand(item *HostIncomingCommand) {
 	if item == nil || item.payload == nil {
 		host.close()
 		return
@@ -376,14 +376,14 @@ const (
 	HostFlagsTickClosed
 )
 
-type EnetHostIncomingCommand struct {
+type HostIncomingCommand struct {
 	protocolHeader ProtocolHeader
 	packetHeader   PacketHeader // .size == len(payload)
 	payload        []byte
 	endpoint       *net.UDPAddr
 }
 
-type EnetHostOutgoingCommand struct {
+type HostOutgoingCommand struct {
 	peer     string
 	payload  []byte
 	chanid   uint8
