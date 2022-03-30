@@ -93,6 +93,7 @@ func (host *EnetHost) Run(sigs chan os.Signal) {
 func (host *EnetHost) Connect(ep string) {
 	host.outgoing <- &EnetHostOutgoingCommand{ep, nil, ChannelIDAll, true}
 }
+
 func (host *EnetHost) Disconnect(ep string) {
 	host.outgoing <- &EnetHostOutgoingCommand{ep, nil, ChannelIDNone, true}
 }
@@ -100,6 +101,7 @@ func (host *EnetHost) Disconnect(ep string) {
 func (host *EnetHost) Write(endp string, chanid uint8, dat []byte) {
 	host.outgoing <- &EnetHostOutgoingCommand{endp, dat, chanid, true}
 }
+
 func (host *EnetHost) Stop() {
 	host.whenSocketIncomingPacket(EnetProtocolHeader{}, PacketHeader{}, nil, nil)
 }
@@ -146,6 +148,7 @@ func (host *EnetHost) runSocket() {
 func (host *EnetHost) whenSignal(sig os.Signal) {
 	host.close()
 }
+
 func (host *EnetHost) close() {
 	if host.flags&EnetHostFlagsStopped != 0 {
 		return
@@ -162,6 +165,7 @@ func (host *EnetHost) close() {
 	host.flags |= EnetHostFlagsTickClosed
 	debugf("%v closed\n", host.addr)
 }
+
 func (host *EnetHost) whenTick(t time.Time) {
 	if host.flags&EnetHostFlagsTickClosed != 0 {
 		return
@@ -199,6 +203,7 @@ func (host *EnetHost) whenSocketIncomingPacket(phdr EnetProtocolHeader,
 	}
 	return
 }
+
 func (host *EnetHost) connectPeer(ep string) {
 	debugf("connecting %v\n", ep)
 	cid := host.nextClientid
@@ -213,6 +218,7 @@ func (host *EnetHost) connectPeer(ep string) {
 	ch := peer.channelFromID(ChannelIDNone)
 	peer.outgoingPend(ch, hdr, PacketFragment{}, PacketSynEncode(syn))
 }
+
 func (host *EnetHost) disconnectPeer(ep string) {
 	debugf("disconnecting %v\n", ep)
 	peer := host.peerFromEndpoint(ep, EnetpeerIDAny)
@@ -228,10 +234,12 @@ func (host *EnetHost) disconnectPeer(ep string) {
 	ch := peer.channelFromID(ChannelIDNone)
 	peer.outgoingPend(ch, hdr, PacketFragment{}, []byte{})
 }
+
 func (host *EnetHost) resetPeer(ep string) {
 	peer := host.peerFromEndpoint(ep, EnetpeerIDAny)
 	host.destroyPeer(peer)
 }
+
 func (host *EnetHost) whenOutgoingHostCommand(item *EnetHostOutgoingCommand) {
 	if item.payload == nil {
 		if item.chanid == ChannelIDAll { // connect request
@@ -326,9 +334,11 @@ func (host *EnetHost) destroyPeer(peer *Enetpeer) {
 	delete(host.peers, id)
 	debugf("release peer %v\n", id)
 }
+
 func (host *EnetHost) SetConnectionHandler(h PeerEventHandler) {
 	host.notifyConnected = h
 }
+
 func (host *EnetHost) SetDisconnectionHandler(h PeerEventHandler) {
 	host.notifyDisconnected = h
 }
@@ -336,10 +346,12 @@ func (host *EnetHost) SetDisconnectionHandler(h PeerEventHandler) {
 func (host *EnetHost) SetDataHandler(h DataEventHandler) {
 	host.notifyData = h
 }
+
 func (host *EnetHost) updateRcvStatis(rcvd int) {
 	host.rcvdBytes += rcvd
 	host.lastRecvTime = host.now
 }
+
 func (host *EnetHost) updateSNtStatis(snt int) {
 	host.sentBytes += snt
 	host.lastSendTime = host.now
@@ -370,6 +382,7 @@ type EnetHostIncomingCommand struct {
 	payload        []byte
 	endpoint       *net.UDPAddr
 }
+
 type EnetHostOutgoingCommand struct {
 	peer     string
 	payload  []byte
@@ -381,6 +394,7 @@ func (host *EnetHost) peerFromEndpoint(ep string, clientid uint32) *Enetpeer {
 	addr, _ := net.ResolveUDPAddr("udp", ep)
 	return host.peerFromAddr(addr, clientid)
 }
+
 func (host *EnetHost) peerFromAddr(ep *net.UDPAddr, clientid uint32) *Enetpeer {
 	assert(ep != nil)
 	id := ep.String()
@@ -390,6 +404,5 @@ func (host *EnetHost) peerFromAddr(ep *net.UDPAddr, clientid uint32) *Enetpeer {
 		peer.clientid = clientid
 		host.peers[id] = peer
 	}
-
 	return peer
 }

@@ -71,6 +71,7 @@ func newEnetpeer(addr *net.UDPAddr, host *EnetHost) *Enetpeer {
 		host:             host,
 	}
 }
+
 func (peer *Enetpeer) doSend(hdr PacketHeader, frag PacketFragment, dat []byte) {
 	writer := bytes.NewBuffer(nil)
 	phdr := EnetProtocolHeader{0, 0, 1, uint32(peer.host.now), peer.clientid}
@@ -83,6 +84,7 @@ func (peer *Enetpeer) doSend(hdr PacketHeader, frag PacketFragment, dat []byte) 
 	peer.host.doSend(writer.Bytes(), peer.remoteAddr)
 	//	debugf("peer do-send %v\n", hdr.Type)
 }
+
 func (peer *Enetpeer) channelFromID(cid uint8) *Channel {
 	if cid >= peer.chanCount {
 		return &peer.channel[EnetdefaultChannelCount]
@@ -143,21 +145,23 @@ func (peer *Enetpeer) whenEnetincomingACK(header PacketHeader, payload []byte) {
 		}
 	}
 }
+
 func notifyData(peer *Enetpeer, dat []byte) {
 	debugf("on-dat %v\n", len(dat))
 }
+
 func notifyPeerConnected(peer *Enetpeer, ret int) {
 	debugf("peer connected %v, ret: %v\n", peer.remoteAddr, ret)
 }
+
 func notifyPeerDisconnected(peer *Enetpeer, ret int) {
 	debugf("peer disconnected %v, ret: %v\n", peer.remoteAddr, ret)
 }
-func (peer *Enetpeer) reset() {
 
-}
-func (peer *Enetpeer) handshake(syn PacketSyn) {
+func (peer *Enetpeer) reset() {}
 
-}
+func (peer *Enetpeer) handshake(syn PacketSyn) {}
+
 func (peer *Enetpeer) whenEnetincomingSyn(header PacketHeader, payload []byte) {
 	debugf("peer in-syn %v\n", peer.remoteAddr)
 	reader := bytes.NewReader(payload)
@@ -212,9 +216,7 @@ func (peer *Enetpeer) whenEnetincomingFin(header PacketHeader, payload []byte) {
 	peer.host.timers.push(peer.host.now+peer.rttTimeo*2, func() { peer.host.destroyPeer(peer) })
 }
 
-func (peer *Enetpeer) whenEnetincomingPing(header PacketHeader, payload []byte) {
-
-}
+func (peer *Enetpeer) whenEnetincomingPing(header PacketHeader, payload []byte) {}
 
 func (peer *Enetpeer) whenEnetincomingReliable(header PacketHeader, payload []byte) {
 	debugf("peer in-reliable %v\n", peer.remoteAddr)

@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 )
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketACKDefault(chanid uint8) (hdr PacketHeader, ack PacketAck) {
 	hdr.Type = PacketTypeACK
 	hdr.Flags = 0
@@ -19,7 +19,7 @@ func PacketACKEncode(ack PacketAck) []byte {
 	return writer.Bytes()
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketSynDefault() (hdr PacketHeader, syn PacketSyn) {
 	syn.PeerID = 0
 	syn.MTU = EnetdefaultMtu
@@ -37,13 +37,14 @@ func PacketSynDefault() (hdr PacketHeader, syn PacketSyn) {
 	hdr.Size = uint32(binary.Size(hdr) + binary.Size(syn))
 	return
 }
+
 func PacketSynEncode(syn PacketSyn) []byte {
 	writer := bytes.NewBuffer(nil)
 	binary.Write(writer, binary.BigEndian, &syn)
 	return writer.Bytes()
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketSynackDefault() (hdr PacketHeader, sak PacketSynAck) {
 	hdr, syn := PacketSynDefault()
 	hdr.Type = PacketTypeSynack
@@ -56,7 +57,7 @@ func PacketSynackEncode(sak PacketSynAck) []byte {
 	return writer.Bytes()
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketFinDefault() (hdr PacketHeader) {
 	hdr.Type = PacketTypeFin
 	hdr.Flags = PacketHeaderFlagsNeedack
@@ -65,7 +66,7 @@ func PacketFinDefault() (hdr PacketHeader) {
 	return
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketPingDefault(chanid uint8) (hdr PacketHeader) {
 	hdr.Type = PacketTypePing
 	hdr.Flags = PacketHeaderFlagsNeedack
@@ -74,7 +75,7 @@ func PacketPingDefault(chanid uint8) (hdr PacketHeader) {
 	return
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketReliableDefault(chanid uint8, payloadlen uint32) (hdr PacketHeader) {
 	hdr.Type = PacketTypeReliable
 	hdr.Flags = PacketHeaderFlagsNeedack
@@ -83,7 +84,7 @@ func PacketReliableDefault(chanid uint8, payloadlen uint32) (hdr PacketHeader) {
 	return
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketUnreliableDefault(chanid uint8, payloadlen, usn uint32) (hdr PacketHeader, pkt PacketUnreliable) {
 	hdr.Type = PacketTypeUnreliable
 	hdr.Flags = 0
@@ -93,7 +94,7 @@ func PacketUnreliableDefault(chanid uint8, payloadlen, usn uint32) (hdr PacketHe
 	return
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketFragmentDefault(chanid uint8, fraglen uint32) (hdr PacketHeader, pkt PacketFragment) {
 	hdr.Type = PacketTypeFragment
 	hdr.Flags = PacketHeaderFlagsNeedack
@@ -102,7 +103,7 @@ func PacketFragmentDefault(chanid uint8, fraglen uint32) (hdr PacketHeader, pkt 
 	return
 }
 
-// 完成 PacketHeader的填充，没有具体的packetheader填充
+// Complete PacketHeader filling, no specific packetheader filling
 func PacketEgDefault() (hdr PacketHeader) {
 	hdr.Type = PacketTypeFragment
 	hdr.Flags = PacketHeaderFlagsNeedack // should be acked
