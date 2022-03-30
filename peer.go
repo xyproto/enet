@@ -64,9 +64,9 @@ func newPeer(addr *net.UDPAddr, host *EnetHost) *Peer {
 		lowestRtt:        DefaultRtt,
 		rttEpoc:          0, // may expire as soon as fast
 		throttleEpoc:     0, // may expire immediately
-		timeoutLimit:     EnettimeoutLimit,
-		timeoutMin:       EnettimeoutMin,
-		timeoutMax:       EnettimeoutMax,
+		timeoutLimit:     TimeoutLimit,
+		timeoutMin:       TimeoutMin,
+		timeoutMax:       TimeoutMax,
 		remoteAddr:       addr,
 		host:             host,
 	}

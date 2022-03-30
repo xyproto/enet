@@ -15,8 +15,8 @@ const (
 )
 
 const (
-	EnetprotocolFlagsNone uint8 = iota
-	EnetprotocolFlagsCrc        = 0xcc // use Enetcrc32Header
+	ProtocolFlagsNone uint8 = iota
+	ProtocolFlagsCrc        = 0xcc // use Enetcrc32Header
 )
 
 const (
@@ -34,12 +34,12 @@ const (
 	DefaultThrottleDece     = 2
 	DefaultTickMs           = 20  // ms
 	DefaultRtt              = 500 //ms
-	EnetudpSize             = 65536
+	UDPSize                 = 65536
 	DefaultThrottle         = 32
 	ThrottleScale           = 32
-	EnettimeoutLimit        = 32   // 30 seconds
-	EnettimeoutMin          = 5000 // 5 second
-	EnettimeoutMax          = 30000
+	TimeoutLimit            = 32   // 30 seconds
+	TimeoutMin              = 5000 // 5 second
+	TimeoutMax              = 30000
 	EnetpingInterval        = 1000 // 1 second
 	EnetbpsInterval         = 1000 // 1 second
 )

@@ -108,7 +108,7 @@ func (host *EnetHost) Stop() {
 
 // run in another routine
 func (host *EnetHost) runSocket() {
-	buf := make([]byte, EnetudpSize) // large enough
+	buf := make([]byte, UDPSize) // large enough
 
 	sock := host.socket
 	for {
@@ -122,7 +122,7 @@ func (host *EnetHost) runSocket() {
 		var phdr ProtocolHeader
 		binary.Read(reader, binary.BigEndian, &phdr)
 
-		if phdr.Flags&EnetprotocolFlagsCrc != 0 {
+		if phdr.Flags&ProtocolFlagsCrc != 0 {
 			var crc32 CRC32Header
 			binary.Read(reader, binary.BigEndian, &crc32)
 		}
