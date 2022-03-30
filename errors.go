@@ -19,11 +19,11 @@ func assert(v bool) {
 }
 func assure(v bool, format string, a ...interface{}) {
 	if !v {
-		fmt.Printf(format, a)
+		fmt.Printf(format, a...)
 	}
 }
 func enet_panic_error(format string, a ...interface{}) {
-	panic(fmt.Errorf(format, a))
+	panic(fmt.Errorf(format, a...))
 }
 
 func (err enet_error) f(a ...interface{}) error {
