@@ -209,9 +209,9 @@ func (host *EnetHost) connectPeer(ep string) {
 		return
 	}
 	peer.flags |= EnetpeerFlagsSynSending
-	hdr, syn := EnetpacketSynDefault()
+	hdr, syn := PacketSynDefault()
 	ch := peer.channelFromID(ChannelIDNone)
-	peer.outgoingPend(ch, hdr, PacketFragment{}, EnetpacketSynEncode(syn))
+	peer.outgoingPend(ch, hdr, PacketFragment{}, PacketSynEncode(syn))
 }
 func (host *EnetHost) disconnectPeer(ep string) {
 	debugf("disconnecting %v\n", ep)
@@ -223,7 +223,7 @@ func (host *EnetHost) disconnectPeer(ep string) {
 	if peer.flags&(EnetpeerFlagsFinRcvd|EnetpeerFlagsFinSending) != 0 {
 		return
 	}
-	hdr := EnetpacketFinDefault()
+	hdr := PacketFinDefault()
 	peer.flags |= EnetpeerFlagsFinSending
 	ch := peer.channelFromID(ChannelIDNone)
 	peer.outgoingPend(ch, hdr, PacketFragment{}, []byte{})
@@ -255,7 +255,7 @@ func (host *EnetHost) whenOutgoingHostCommand(item *EnetHostOutgoingCommand) {
 	if frags > 1 {
 		for i := uint32(0); i < frags; i++ {
 			dat := item.payload[i*peer.mtu : (i+1)*peer.mtu]
-			pkhdr, frag := EnetpacketFragmentDefault(item.chanid, uint32(len(dat)))
+			pkhdr, frag := PacketFragmentDefault(item.chanid, uint32(len(dat)))
 			frag.Count = frags
 			frag.Index = i
 			frag.Size = l
@@ -265,7 +265,7 @@ func (host *EnetHost) whenOutgoingHostCommand(item *EnetHostOutgoingCommand) {
 		}
 
 	} else {
-		pkhdr := EnetpacketReliableDefault(item.chanid, l)
+		pkhdr := PacketReliableDefault(item.chanid, l)
 		peer.outgoingPend(ch, pkhdr, PacketFragment{}, item.payload)
 	}
 	//	ch.doSend(peer)
@@ -279,7 +279,7 @@ func (host *EnetHost) whenIncomingHostCommand(item *EnetHostIncomingCommand) {
 	}
 	host.updateRcvStatis(int(item.packetHeader.Size))
 
-	if item.packetHeader.Type > EnetpacketTypeCount {
+	if item.packetHeader.Type > PacketTypeCount {
 		debugf("skipped packet: %v\n", item.packetHeader.Type)
 		return
 	}
@@ -291,20 +291,20 @@ func (host *EnetHost) whenIncomingHostCommand(item *EnetHostIncomingCommand) {
 	ch := peer.channelFromID(item.packetHeader.ChannelID)
 
 	// ack if needed
-	if item.packetHeader.Flags&EnetpacketHeaderFlagsNeedack != 0 {
-		hdr, ack := EnetpacketACKDefault(item.packetHeader.ChannelID)
+	if item.packetHeader.Flags&PacketHeaderFlagsNeedack != 0 {
+		hdr, ack := PacketACKDefault(item.packetHeader.ChannelID)
 		ack.SN = item.packetHeader.SN
 		ack.SntTime = item.protocolHeader.SntTime
 		debugf("ack packet %v, typ:%v\n", ack.SN, item.packetHeader.Type)
-		peer.outgoingPend(ch, hdr, PacketFragment{}, EnetpacketACKEncode(ack))
+		peer.outgoingPend(ch, hdr, PacketFragment{}, PacketACKEncode(ack))
 	}
-	WhenEnetpacketIncomingDisp[item.packetHeader.Type](peer, item.packetHeader, item.payload)
+	WhenPacketIncomingDisp[item.packetHeader.Type](peer, item.packetHeader, item.payload)
 	//	ch.doSend(peer)
 }
 
-type whenEnetpacketIncomingDisp func(peer *Enetpeer, hdr PacketHeader, payload []byte)
+type whenPacketIncomingDisp func(peer *Enetpeer, hdr PacketHeader, payload []byte)
 
-var WhenEnetpacketIncomingDisp = []whenEnetpacketIncomingDisp{
+var WhenPacketIncomingDisp = []whenPacketIncomingDisp{
 	(*Enetpeer).whenUnknown,
 	(*Enetpeer).whenEnetincomingACK,
 	(*Enetpeer).whenEnetincomingSyn,

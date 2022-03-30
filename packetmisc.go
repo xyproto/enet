@@ -5,22 +5,22 @@ import (
 	"encoding/binary"
 )
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketACKDefault(chanid uint8) (hdr PacketHeader, ack PacketAck) {
-	hdr.Type = EnetpacketTypeACK
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketACKDefault(chanid uint8) (hdr PacketHeader, ack PacketAck) {
+	hdr.Type = PacketTypeACK
 	hdr.Flags = 0
 	hdr.ChannelID = chanid
 	hdr.Size = uint32(binary.Size(hdr) + binary.Size(ack))
 	return
 }
-func EnetpacketACKEncode(ack PacketAck) []byte {
+func PacketACKEncode(ack PacketAck) []byte {
 	writer := bytes.NewBuffer(nil)
 	binary.Write(writer, binary.BigEndian, &ack)
 	return writer.Bytes()
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketSynDefault() (hdr PacketHeader, syn PacketSyn) {
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketSynDefault() (hdr PacketHeader, syn PacketSyn) {
 	syn.PeerID = 0
 	syn.MTU = EnetdefaultMtu
 	syn.WndSize = EnetdefaultWndsize
@@ -31,61 +31,61 @@ func EnetpacketSynDefault() (hdr PacketHeader, syn PacketSyn) {
 	syn.ThrottleAcce = EnetdefaultThrottleAcce
 	syn.ThrottleDece = EnetdefaultThrottleDece
 
-	hdr.Type = EnetpacketTypeSyn
-	hdr.Flags = EnetpacketHeaderFlagsNeedack
+	hdr.Type = PacketTypeSyn
+	hdr.Flags = PacketHeaderFlagsNeedack
 	hdr.ChannelID = ChannelIDNone
 	hdr.Size = uint32(binary.Size(hdr) + binary.Size(syn))
 	return
 }
-func EnetpacketSynEncode(syn PacketSyn) []byte {
+func PacketSynEncode(syn PacketSyn) []byte {
 	writer := bytes.NewBuffer(nil)
 	binary.Write(writer, binary.BigEndian, &syn)
 	return writer.Bytes()
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketSynackDefault() (hdr PacketHeader, sak PacketSynAck) {
-	hdr, syn := EnetpacketSynDefault()
-	hdr.Type = EnetpacketTypeSynack
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketSynackDefault() (hdr PacketHeader, sak PacketSynAck) {
+	hdr, syn := PacketSynDefault()
+	hdr.Type = PacketTypeSynack
 	sak = PacketSynAck(syn)
 	return
 }
-func EnetpacketSynackEncode(sak PacketSynAck) []byte {
+func PacketSynackEncode(sak PacketSynAck) []byte {
 	writer := bytes.NewBuffer(nil)
 	binary.Write(writer, binary.BigEndian, &sak)
 	return writer.Bytes()
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketFinDefault() (hdr PacketHeader) {
-	hdr.Type = EnetpacketTypeFin
-	hdr.Flags = EnetpacketHeaderFlagsNeedack
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketFinDefault() (hdr PacketHeader) {
+	hdr.Type = PacketTypeFin
+	hdr.Flags = PacketHeaderFlagsNeedack
 	hdr.ChannelID = ChannelIDNone
 	hdr.Size = uint32(binary.Size(hdr))
 	return
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketPingDefault(chanid uint8) (hdr PacketHeader) {
-	hdr.Type = EnetpacketTypePing
-	hdr.Flags = EnetpacketHeaderFlagsNeedack
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketPingDefault(chanid uint8) (hdr PacketHeader) {
+	hdr.Type = PacketTypePing
+	hdr.Flags = PacketHeaderFlagsNeedack
 	hdr.ChannelID = chanid
 	hdr.Size = uint32(binary.Size(hdr))
 	return
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketReliableDefault(chanid uint8, payloadlen uint32) (hdr PacketHeader) {
-	hdr.Type = EnetpacketTypeReliable
-	hdr.Flags = EnetpacketHeaderFlagsNeedack
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketReliableDefault(chanid uint8, payloadlen uint32) (hdr PacketHeader) {
+	hdr.Type = PacketTypeReliable
+	hdr.Flags = PacketHeaderFlagsNeedack
 	hdr.ChannelID = chanid
 	hdr.Size = uint32(binary.Size(hdr)) + payloadlen
 	return
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketUnreliableDefault(chanid uint8, payloadlen, usn uint32) (hdr PacketHeader, pkt PacketUnreliable) {
-	hdr.Type = EnetpacketTypeUnreliable
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketUnreliableDefault(chanid uint8, payloadlen, usn uint32) (hdr PacketHeader, pkt PacketUnreliable) {
+	hdr.Type = PacketTypeUnreliable
 	hdr.Flags = 0
 	hdr.ChannelID = chanid
 	hdr.Size = uint32(binary.Size(hdr)+binary.Size(pkt)) + payloadlen
@@ -93,19 +93,19 @@ func EnetpacketUnreliableDefault(chanid uint8, payloadlen, usn uint32) (hdr Pack
 	return
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketFragmentDefault(chanid uint8, fraglen uint32) (hdr PacketHeader, pkt PacketFragment) {
-	hdr.Type = EnetpacketTypeFragment
-	hdr.Flags = EnetpacketHeaderFlagsNeedack
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketFragmentDefault(chanid uint8, fraglen uint32) (hdr PacketHeader, pkt PacketFragment) {
+	hdr.Type = PacketTypeFragment
+	hdr.Flags = PacketHeaderFlagsNeedack
 	hdr.ChannelID = chanid
 	hdr.Size = uint32(binary.Size(hdr)+binary.Size(pkt)) + fraglen
 	return
 }
 
-// 完成 EnetpacketHeader的填充，没有具体的packetheader填充
-func EnetpacketEgDefault() (hdr PacketHeader) {
-	hdr.Type = EnetpacketTypeFragment
-	hdr.Flags = EnetpacketHeaderFlagsNeedack // should be acked
+// 完成 PacketHeader的填充，没有具体的packetheader填充
+func PacketEgDefault() (hdr PacketHeader) {
+	hdr.Type = PacketTypeFragment
+	hdr.Flags = PacketHeaderFlagsNeedack // should be acked
 	hdr.ChannelID = ChannelIDNone
 	hdr.Size = uint32(binary.Size(hdr))
 	return

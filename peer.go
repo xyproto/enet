@@ -76,7 +76,7 @@ func (peer *Enetpeer) doSend(hdr PacketHeader, frag PacketFragment, dat []byte) 
 	phdr := EnetProtocolHeader{0, 0, 1, uint32(peer.host.now), peer.clientid}
 	binary.Write(writer, binary.BigEndian, phdr)
 	binary.Write(writer, binary.BigEndian, &hdr)
-	if hdr.Type == EnetpacketTypeFragment {
+	if hdr.Type == PacketTypeFragment {
 		binary.Write(writer, binary.BigEndian, &frag)
 	}
 	binary.Write(writer, binary.BigEndian, dat)
@@ -122,21 +122,21 @@ func (peer *Enetpeer) whenEnetincomingACK(header PacketHeader, payload []byte) {
 			peer.host.timers.remove(i.retrans.index)
 			i.retrans = nil
 		}
-		if i.header.Type == EnetpacketTypeSyn {
+		if i.header.Type == PacketTypeSyn {
 			peer.flags |= EnetpeerFlagsSynSent
 			if peer.flags&EnetpeerFlagsSynackRcvd != 0 {
 				peer.flags |= EnetpeerFlagsEstablished
 				notifyPeerConnected(peer, 0)
 			}
 		}
-		if i.header.Type == EnetpacketTypeSynack {
+		if i.header.Type == PacketTypeSynack {
 			peer.flags |= EnetpeerFlagsSynackSent
 			if peer.flags&EnetpeerFlagsSynRcvd != 0 {
 				peer.flags |= EnetpeerFlagsEstablished
 				notifyPeerConnected(peer, 0)
 			}
 		}
-		if i.header.Type == EnetpacketTypeFin {
+		if i.header.Type == PacketTypeFin {
 			peer.flags |= EnetpeerFlagsStopped
 			notifyPeerDisconnected(peer, 0)
 			peer.host.destroyPeer(peer)
@@ -175,10 +175,10 @@ func (peer *Enetpeer) whenEnetincomingSyn(header PacketHeader, payload []byte) {
 	peer.flags |= EnetpeerFlagsSynackSending
 	peer.flags |= EnetpeerFlagsSynRcvd
 	ch := peer.channelFromID(ChannelIDNone)
-	phdr, synack := EnetpacketSynackDefault()
+	phdr, synack := PacketSynackDefault()
 
 	// todo add retrans timer
-	peer.outgoingPend(ch, phdr, PacketFragment{}, EnetpacketSynackEncode(synack))
+	peer.outgoingPend(ch, phdr, PacketFragment{}, PacketSynackEncode(synack))
 }
 
 func (peer *Enetpeer) whenEnetincomingSynack(header PacketHeader, payload []byte) {
@@ -356,7 +356,7 @@ func (peer *Enetpeer) outgoingPend(ch *Channel,
 		peer.doSend(item.header, item.fragment, item.payload)
 	}
 
-	if hdr.Type != EnetpacketTypeACK {
+	if hdr.Type != PacketTypeACK {
 		item.retrans = peer.host.timers.push(peer.host.now+peer.rcvTimeo, retrans)
 	}
 	ch.outgoingPend(item)

@@ -4,11 +4,11 @@ const channelPacketCount = 256
 
 type ChannelItem struct {
 	header   PacketHeader
-	fragment PacketFragment // used if header.cmd == EnetpacketFragment
-	payload  []byte             // not include packet-header
-	retries  int                // sent times for outgoing packet
-	acked    int                // acked times
-	retrans  *EnetTimerItem     // retrans timer
+	fragment PacketFragment // used if header.cmd == PacketFragment
+	payload  []byte         // not include packet-header
+	retries  int            // sent times for outgoing packet
+	acked    int            // acked times
+	retrans  *EnetTimerItem // retrans timer
 }
 
 // outgoing: ->end ..untransfered.. next ..transfered.. begin ->
@@ -67,7 +67,7 @@ func (ch *Channel) outgoingSlide() (item *ChannelItem) {
 	if v.retries == 0 {
 		return
 	}
-	if v.header.Type != EnetpacketTypeACK && v.acked == 0 {
+	if v.header.Type != PacketTypeACK && v.acked == 0 {
 		return
 	}
 	debugf("outgoing slide %v, sn:%v, rty:%v, ack:%v\n", v.header.Type, v.header.SN, v.retries, v.acked)
@@ -85,7 +85,7 @@ func (ch *Channel) outgoingDoTrans() (item *ChannelItem) {
 	idx := ch.outgoingNext % channelPacketCount
 	item = ch.outgoing[idx]
 	assert(item != nil)
-	assert((item.acked == 0 && item.header.Type != EnetpacketTypeACK) || item.header.Type == EnetpacketTypeACK)
+	assert((item.acked == 0 && item.header.Type != PacketTypeACK) || item.header.Type == PacketTypeACK)
 	item.retries++
 	ch.outgoingNext++
 	ch.intransBytes += item.header.Size
@@ -137,7 +137,7 @@ func (ch *Channel) incomingSlide() (item *ChannelItem) { // return value may be 
 	assert(v.header.SN == ch.incomingBegin)
 
 	// merge fragments
-	if v.header.Type == EnetpacketTypeFragment {
+	if v.header.Type == PacketTypeFragment {
 		all := true
 		for i := uint32(1); i < v.fragment.Count; i++ {
 			n := ch.incoming[idx+i]

@@ -1,17 +1,17 @@
 package enet
 
 const (
-	EnetpacketTypeUnspec     uint8 = iota
-	EnetpacketTypeACK              = 1
-	EnetpacketTypeSyn              = 2
-	EnetpacketTypeSynack           = 3
-	EnetpacketTypeFin              = 4
-	EnetpacketTypePing             = 5
-	EnetpacketTypeReliable         = 6
-	EnetpacketTypeUnreliable       = 7
-	EnetpacketTypeFragment         = 8
-	EnetpacketTypeEg               = 12
-	EnetpacketTypeCount            = 12
+	PacketTypeUnspec     uint8 = iota
+	PacketTypeACK              = 1
+	PacketTypeSyn              = 2
+	PacketTypeSynack           = 3
+	PacketTypeFin              = 4
+	PacketTypePing             = 5
+	PacketTypeReliable         = 6
+	PacketTypeUnreliable       = 7
+	PacketTypeFragment         = 8
+	PacketTypeEg               = 12
+	PacketTypeCount            = 12
 )
 
 const (
@@ -20,9 +20,9 @@ const (
 )
 
 const (
-	EnetpacketHeaderFlagsNone     uint8 = iota
-	EnetpacketHeaderFlagsNeedack        // for syn, syncak, fin, reliable, ping, fragment
-	EnetpacketHeaderFlagsForcefin       // i don't know how to use this flag
+	PacketHeaderFlagsNone     uint8 = iota
+	PacketHeaderFlagsNeedack        // for syn, syncak, fin, reliable, ping, fragment
+	PacketHeaderFlagsForcefin       // i don't know how to use this flag
 )
 
 const (

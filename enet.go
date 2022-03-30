@@ -6,7 +6,7 @@ udpHeader | protocolHeader | crc32Header? | ( packetHeader | payload )+
 type EnetProtocolHeader struct {
 	PeerID      uint16 // target peerid, not used
 	Flags       uint8  // 0xcc : use crc32 header, default 0
-	PacketCount uint8  // Enetpackets in this datagram
+	PacketCount uint8  // Packets in this datagram
 	SntTime     uint32 // milli-second, sent-time
 	ClientID    uint32 // client-id? , server would fill client's id, not his own
 }
@@ -14,8 +14,8 @@ type EnetCrc32Header struct {
 	CRC32 uint32
 }
 type PacketHeader struct {
-	Type      uint8  // EnetpacketTypeXxx
-	Flags     uint8  // Needack, Forcefin, EnetpacketHeaderFlagsXxx
+	Type      uint8  // PacketTypeXxx
+	Flags     uint8  // Needack, Forcefin, PacketHeaderFlagsXxx
 	ChannelID uint8  // [0,n), or 0xff; oxff : control channel
 	RSV       uint8  // not used
 	Size      uint32 // including packetHeader and payload, bytes
@@ -30,7 +30,7 @@ type PacketAck struct {
 }
 
 //cmdTypeSyn = 2
-// flags = EnetpacketNeedack
+// flags = PacketNeedack
 type PacketSyn struct { // ack by conack
 	PeerID           uint16 // zero, whose id write the packet
 	MTU              uint16 // default = 1200
@@ -44,22 +44,22 @@ type PacketSyn struct { // ack by conack
 }
 
 //cmdTypeSynack = 3
-// flags = EnetpacketNeedack
+// flags = PacketNeedack
 type PacketSynAck PacketSyn
 
 //cmdTypeFin = 4
-// flags = EnetpacketFlagsForcefin if disconnect unconnected peer
+// flags = PacketFlagsForcefin if disconnect unconnected peer
 type PacketFin struct{}
 
 // cmdType = 5
 type PacketPing struct{}
 
 //cmdTypeReliable = 6
-// flags= EnetpacketHeaderFlagsNeedack
+// flags= PacketHeaderFlagsNeedack
 type PacketReliable struct{}
 
 //cmdTypeUnreliable = 7
-// flags = EnetpacketHeaderFlagsNone
+// flags = PacketHeaderFlagsNone
 type PacketUnreliable struct {
 	SN uint32 // unreliable sequence number, filled with channel.nextUSN
 }
