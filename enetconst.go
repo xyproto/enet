@@ -50,11 +50,11 @@ const (
 )
 
 const (
-	EnetpeerConnectResultDuplicated = 1
-	EnetpeerDisconnectResultInvalid
+	PeerConnectResultDuplicated = 1
+	PeerDisconnectResultInvalid
 )
 
-const EnetpeerIDAny uint32 = 0xffffffff
+const PeerIDAny uint32 = 0xffffffff
 
 /* uncompatiable with enet origin protocol
 EnetcmdUnsequenced    // +unseq flag

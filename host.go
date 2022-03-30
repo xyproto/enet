@@ -16,7 +16,7 @@ type EnetHost struct {
 	incoming     chan *EnetHostIncomingCommand
 	outgoing     chan *EnetHostOutgoingCommand
 	tick         <-chan time.Time
-	peers        map[string]*Enetpeer
+	peers        map[string]*Peer
 	timers       TimerQueue
 	nextClientid uint32 // positive client id seed
 	flags        int    // HostFlagsXxx
@@ -44,7 +44,7 @@ func NewHost(addr string) (Host, error) {
 		incoming: make(chan *EnetHostIncomingCommand, 16),
 		outgoing: make(chan *EnetHostOutgoingCommand, 16),
 		tick:     time.Tick(time.Millisecond * EnetdefaultTickMs),
-		peers:    make(map[string]*Enetpeer),
+		peers:    make(map[string]*Peer),
 		timers:   newTimerQueue(),
 	}
 	if err == nil {
@@ -210,10 +210,10 @@ func (host *EnetHost) connectPeer(ep string) {
 	host.nextClientid++
 	peer := host.peerFromEndpoint(ep, cid)
 	if peer.clientid != cid { // connect a established peer?
-		notifyPeerConnected(peer, EnetpeerConnectResultDuplicated)
+		notifyPeerConnected(peer, PeerConnectResultDuplicated)
 		return
 	}
-	peer.flags |= EnetpeerFlagsSynSending
+	peer.flags |= PeerFlagsSynSending
 	hdr, syn := PacketSynDefault()
 	ch := peer.channelFromID(ChannelIDNone)
 	peer.outgoingPend(ch, hdr, PacketFragment{}, PacketSynEncode(syn))
@@ -221,22 +221,22 @@ func (host *EnetHost) connectPeer(ep string) {
 
 func (host *EnetHost) disconnectPeer(ep string) {
 	debugf("disconnecting %v\n", ep)
-	peer := host.peerFromEndpoint(ep, EnetpeerIDAny)
-	if peer.flags&EnetpeerFlagsEstablished == 0 {
-		notifyPeerDisconnected(peer, EnetpeerDisconnectResultInvalid)
+	peer := host.peerFromEndpoint(ep, PeerIDAny)
+	if peer.flags&PeerFlagsEstablished == 0 {
+		notifyPeerDisconnected(peer, PeerDisconnectResultInvalid)
 		return
 	}
-	if peer.flags&(EnetpeerFlagsFinRcvd|EnetpeerFlagsFinSending) != 0 {
+	if peer.flags&(PeerFlagsFinRcvd|PeerFlagsFinSending) != 0 {
 		return
 	}
 	hdr := PacketFinDefault()
-	peer.flags |= EnetpeerFlagsFinSending
+	peer.flags |= PeerFlagsFinSending
 	ch := peer.channelFromID(ChannelIDNone)
 	peer.outgoingPend(ch, hdr, PacketFragment{}, []byte{})
 }
 
 func (host *EnetHost) resetPeer(ep string) {
-	peer := host.peerFromEndpoint(ep, EnetpeerIDAny)
+	peer := host.peerFromEndpoint(ep, PeerIDAny)
 	host.destroyPeer(peer)
 }
 
@@ -250,9 +250,9 @@ func (host *EnetHost) whenOutgoingHostCommand(item *EnetHostOutgoingCommand) {
 		}
 		return
 	}
-	peer := host.peerFromEndpoint(item.peer, EnetpeerIDAny)
-	if peer.flags&EnetpeerFlagsEstablished == 0 ||
-		peer.flags&(EnetpeerFlagsFinSending|EnetpeerFlagsSynackSending) != 0 {
+	peer := host.peerFromEndpoint(item.peer, PeerIDAny)
+	if peer.flags&PeerFlagsEstablished == 0 ||
+		peer.flags&(PeerFlagsFinSending|PeerFlagsSynackSending) != 0 {
 		debugf("write denied for at status %X", peer.flags)
 		return
 	}
@@ -310,26 +310,26 @@ func (host *EnetHost) whenIncomingHostCommand(item *EnetHostIncomingCommand) {
 	//	ch.doSend(peer)
 }
 
-type whenPacketIncomingDisp func(peer *Enetpeer, hdr PacketHeader, payload []byte)
+type whenPacketIncomingDisp func(peer *Peer, hdr PacketHeader, payload []byte)
 
 var WhenPacketIncomingDisp = []whenPacketIncomingDisp{
-	(*Enetpeer).whenUnknown,
-	(*Enetpeer).whenEnetincomingACK,
-	(*Enetpeer).whenEnetincomingSyn,
-	(*Enetpeer).whenEnetincomingSynack,
-	(*Enetpeer).whenEnetincomingFin,
-	(*Enetpeer).whenEnetincomingPing,
-	(*Enetpeer).whenEnetincomingReliable,
-	(*Enetpeer).whenEnetincomingUnrelialbe,
-	(*Enetpeer).whenEnetincomingFragment,
-	(*Enetpeer).whenUnknown,
-	(*Enetpeer).whenUnknown,
-	(*Enetpeer).whenUnknown,
-	(*Enetpeer).whenEnetincomingEg,
-	(*Enetpeer).whenUnknown,
+	(*Peer).whenUnknown,
+	(*Peer).whenEnetincomingACK,
+	(*Peer).whenEnetincomingSyn,
+	(*Peer).whenEnetincomingSynack,
+	(*Peer).whenEnetincomingFin,
+	(*Peer).whenEnetincomingPing,
+	(*Peer).whenEnetincomingReliable,
+	(*Peer).whenEnetincomingUnrelialbe,
+	(*Peer).whenEnetincomingFragment,
+	(*Peer).whenUnknown,
+	(*Peer).whenUnknown,
+	(*Peer).whenUnknown,
+	(*Peer).whenEnetincomingEg,
+	(*Peer).whenUnknown,
 }
 
-func (host *EnetHost) destroyPeer(peer *Enetpeer) {
+func (host *EnetHost) destroyPeer(peer *Peer) {
 	id := peer.remoteAddr.String()
 	delete(host.peers, id)
 	debugf("release peer %v\n", id)
@@ -390,17 +390,17 @@ type EnetHostOutgoingCommand struct {
 	reliable bool
 }
 
-func (host *EnetHost) peerFromEndpoint(ep string, clientid uint32) *Enetpeer {
+func (host *EnetHost) peerFromEndpoint(ep string, clientid uint32) *Peer {
 	addr, _ := net.ResolveUDPAddr("udp", ep)
 	return host.peerFromAddr(addr, clientid)
 }
 
-func (host *EnetHost) peerFromAddr(ep *net.UDPAddr, clientid uint32) *Enetpeer {
+func (host *EnetHost) peerFromAddr(ep *net.UDPAddr, clientid uint32) *Peer {
 	assert(ep != nil)
 	id := ep.String()
 	peer, ok := host.peers[id]
 	if !ok {
-		peer = newEnetpeer(ep, host)
+		peer = newPeer(ep, host)
 		peer.clientid = clientid
 		host.peers[id] = peer
 	}

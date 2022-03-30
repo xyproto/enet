@@ -168,7 +168,7 @@ func (ch *Channel) incomingSlide() (item *ChannelItem) { // return value may be 
 	return
 }
 
-func (ch *Channel) doSend(peer *Enetpeer) {
+func (ch *Channel) doSend(peer *Peer) {
 	if ch.intransBytes > peer.wndSize { // window is overflow
 		return
 	}
