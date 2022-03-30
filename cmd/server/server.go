@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/heartszhang/enet"
+	"github.com/xyproto/enet"
 )
 
 func main() {
