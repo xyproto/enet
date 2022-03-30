@@ -19,7 +19,7 @@ type EnetHost struct {
 	peers        map[string]*Enetpeer
 	timers       TimerQueue
 	nextClientid uint32 // positive client id seed
-	flags        int    // EnetHostFlagsXxx
+	flags        int    // HostFlagsXxx
 	rcvdBytes    int
 	sentBytes    int
 	rcvdBps      int
@@ -51,7 +51,7 @@ func NewHost(addr string) (Host, error) {
 		host.socket, err = net.ListenUDP("udp", ep)
 	}
 	if err != nil {
-		host.flags |= EnetHostFlagsStopped
+		host.flags |= HostFlagsStopped
 	}
 	if host.addr == nil && host.socket != nil {
 		host.addr = host.socket.LocalAddr().(*net.UDPAddr)
@@ -66,10 +66,10 @@ func NewHost(addr string) (Host, error) {
 // - exit signal
 // - timer tick
 func (host *EnetHost) Run(sigs chan os.Signal) {
-	host.flags |= EnetHostFlagsRunning
+	host.flags |= HostFlagsRunning
 	go host.runSocket()
 	debugf("running...\n")
-	for host.flags&EnetHostFlagsStopped == 0 {
+	for host.flags&HostFlagsStopped == 0 {
 		select {
 		case item := <-host.incoming:
 			host.now = unixtimeNow()
@@ -87,7 +87,7 @@ func (host *EnetHost) Run(sigs chan os.Signal) {
 		}
 	}
 	debugf("%v run exits\n", host.addr)
-	host.flags &= ^EnetHostFlagsRunning
+	host.flags &= ^HostFlagsRunning
 }
 
 func (host *EnetHost) Connect(ep string) {
@@ -140,7 +140,7 @@ func (host *EnetHost) runSocket() {
 
 	}
 	// socket may be not closed yet
-	if host.flags&EnetHostFlagsStopped == 0 {
+	if host.flags&HostFlagsStopped == 0 {
 		host.whenSocketIncomingPacket(ProtocolHeader{}, PacketHeader{}, nil, nil)
 	}
 }
@@ -150,24 +150,24 @@ func (host *EnetHost) whenSignal(sig os.Signal) {
 }
 
 func (host *EnetHost) close() {
-	if host.flags&EnetHostFlagsStopped != 0 {
+	if host.flags&HostFlagsStopped != 0 {
 		return
 	}
-	host.flags |= EnetHostFlagsStopped
+	host.flags |= HostFlagsStopped
 
 	assert(host.socket != nil)
-	if host.flags&EnetHostFlagsSockClosed == 0 {
-		host.flags |= EnetHostFlagsSockClosed
+	if host.flags&HostFlagsSockClosed == 0 {
+		host.flags |= HostFlagsSockClosed
 		host.socket.Close()
 	}
 
 	// disable tick func
-	host.flags |= EnetHostFlagsTickClosed
+	host.flags |= HostFlagsTickClosed
 	debugf("%v closed\n", host.addr)
 }
 
 func (host *EnetHost) whenTick(t time.Time) {
-	if host.flags&EnetHostFlagsTickClosed != 0 {
+	if host.flags&HostFlagsTickClosed != 0 {
 		return
 	}
 	host.updateStatis()
@@ -369,11 +369,11 @@ func (host *EnetHost) updateStatis() {
 }
 
 const (
-	EnetHostFlagsNone = 1 << iota
-	EnetHostFlagsStopped
-	EnetHostFlagsRunning
-	EnetHostFlagsSockClosed
-	EnetHostFlagsTickClosed
+	HostFlagsNone = 1 << iota
+	HostFlagsStopped
+	HostFlagsRunning
+	HostFlagsSockClosed
+	HostFlagsTickClosed
 )
 
 type EnetHostIncomingCommand struct {
