@@ -1,103 +1,103 @@
 package enet
 
-const channel_packet_count = 256
+const channelPacketCount = 256
 
-type enet_channel_item struct {
+type EnetChannelItem struct {
 	header   EnetPacketHeader
-	fragment EnetPacketFragment // used if header.cmd == enet_packet_fragment
+	fragment EnetPacketFragment // used if header.cmd == EnetpacketFragment
 	payload  []byte             // not include packet-header
 	retries  int                // sent times for outgoing packet
 	acked    int                // acked times
-	retrans  *enet_timer_item   // retrans timer
+	retrans  *EnetTimerItem     // retrans timer
 }
 
 // outgoing: ->end ..untransfered.. next ..transfered.. begin ->
 // incoming: <-begin ..acked.. next ..unacked.. end<-
-type enet_channel struct {
-	_next_sn       uint32 // next reliable packet number for sent
-	_next_usn      uint32 // next unsequenced packet number for sent
-	outgoing       [channel_packet_count]*enet_channel_item
-	incoming       [channel_packet_count]*enet_channel_item
-	outgoing_begin uint32 // the first one is not acked yet
-	incoming_begin uint32 // the first one has be received
-	outgoing_end   uint32 // the last one is not acked yet
-	incoming_end   uint32 // the last one has been received
-	outgoing_used  uint32 // in trans packets not acked
-	incoming_used  uint32 // rcvd packet count in incoming window
-	outgoing_next  uint32 // the next one is being to send first time
-	intrans_bytes  uint32
+type EnetChannel struct {
+	NextSN        uint32 // next reliable packet number for sent
+	NextUSN       uint32 // next unsequenced packet number for sent
+	outgoing      [channelPacketCount]*EnetChannelItem
+	incoming      [channelPacketCount]*EnetChannelItem
+	outgoingBegin uint32 // the first one is not acked yet
+	incomingBegin uint32 // the first one has be received
+	outgoingEnd   uint32 // the last one is not acked yet
+	incomingEnd   uint32 // the last one has been received
+	outgoingUsed  uint32 // in trans packets not acked
+	incomingUsed  uint32 // rcvd packet count in incoming window
+	outgoingNext  uint32 // the next one is being to send first time
+	intransBytes  uint32
 }
 
-func (ch *enet_channel) outgoing_pend(item *enet_channel_item) {
-	item.header.SN = ch._next_sn
-	ch._next_sn++
+func (ch *EnetChannel) outgoingPend(item *EnetChannelItem) {
+	item.header.SN = ch.NextSN
+	ch.NextSN++
 	debugf("channel outgoing %v, typ: %v\n", item.header.SN, item.header.Type)
-	idx := item.header.SN % channel_packet_count
+	idx := item.header.SN % channelPacketCount
 	v := ch.outgoing[idx]
-	assert(v == nil && item.header.SN == ch.outgoing_end)
+	assert(v == nil && item.header.SN == ch.outgoingEnd)
 	ch.outgoing[idx] = item
-	if ch.outgoing_end <= item.header.SN {
-		ch.outgoing_end = item.header.SN + 1
+	if ch.outgoingEnd <= item.header.SN {
+		ch.outgoingEnd = item.header.SN + 1
 	}
-	ch.outgoing_used++
+	ch.outgoingUsed++
 }
 
-// what if outgoing_wrap
-func (ch *enet_channel) outgoing_ack(sn uint32) {
+// what if outgoingWrap
+func (ch *EnetChannel) outgoingACK(sn uint32) {
 	debugf("outgoing ack %v\n", sn)
-	if sn < ch.outgoing_begin || sn >= ch.outgoing_end { // already acked or error
+	if sn < ch.outgoingBegin || sn >= ch.outgoingEnd { // already acked or error
 		debugf("channel-ack abandoned %v\n", sn)
 		return
 	}
-	idx := sn % channel_packet_count
+	idx := sn % channelPacketCount
 	v := ch.outgoing[idx]
 	assert(v != nil && v.header.SN == sn)
-	ch.intrans_bytes -= v.header.Size
+	ch.intransBytes -= v.header.Size
 	v.acked++
 }
 
-func (ch *enet_channel) outgoing_slide() (item *enet_channel_item) {
-	assert(ch.outgoing_begin <= ch.outgoing_end)
-	if ch.outgoing_begin >= ch.outgoing_end {
+func (ch *EnetChannel) outgoingSlide() (item *EnetChannelItem) {
+	assert(ch.outgoingBegin <= ch.outgoingEnd)
+	if ch.outgoingBegin >= ch.outgoingEnd {
 		return
 	}
-	idx := ch.outgoing_begin % channel_packet_count
+	idx := ch.outgoingBegin % channelPacketCount
 	v := ch.outgoing[idx]
 	assert(v != nil)
 	if v.retries == 0 {
 		return
 	}
-	if v.header.Type != enet_packet_type_ack && v.acked == 0 {
+	if v.header.Type != EnetpacketTypeACK && v.acked == 0 {
 		return
 	}
 	debugf("outgoing slide %v, sn:%v, rty:%v, ack:%v\n", v.header.Type, v.header.SN, v.retries, v.acked)
 	item = v
-	ch.outgoing_begin++
+	ch.outgoingBegin++
 	return
 }
 
 // the first time send out packet
-func (ch *enet_channel) outgoing_do_trans() (item *enet_channel_item) {
-	assert(ch.outgoing_next <= ch.outgoing_end)
-	if ch.outgoing_next >= ch.outgoing_end {
+func (ch *EnetChannel) outgoingDoTrans() (item *EnetChannelItem) {
+	assert(ch.outgoingNext <= ch.outgoingEnd)
+	if ch.outgoingNext >= ch.outgoingEnd {
 		return
 	}
-	idx := ch.outgoing_next % channel_packet_count
+	idx := ch.outgoingNext % channelPacketCount
 	item = ch.outgoing[idx]
 	assert(item != nil)
-	assert((item.acked == 0 && item.header.Type != enet_packet_type_ack) || item.header.Type == enet_packet_type_ack)
+	assert((item.acked == 0 && item.header.Type != EnetpacketTypeACK) || item.header.Type == EnetpacketTypeACK)
 	item.retries++
-	ch.outgoing_next++
-	ch.intrans_bytes += item.header.Size
+	ch.outgoingNext++
+	ch.intransBytes += item.header.Size
 	return
 }
 
 // may be retransed packet
-func (ch *enet_channel) incoming_trans(item *enet_channel_item) {
-	if item.header.SN < ch.incoming_begin {
+func (ch *EnetChannel) incomingTrans(item *EnetChannelItem) {
+	if item.header.SN < ch.incomingBegin {
 		return
 	}
-	idx := item.header.SN % channel_packet_count
+	idx := item.header.SN % channelPacketCount
 	v := ch.incoming[idx]
 	// duplicated packet
 	if v != nil {
@@ -107,37 +107,37 @@ func (ch *enet_channel) incoming_trans(item *enet_channel_item) {
 	assert(v == nil || v.header.SN == item.header.SN)
 
 	ch.incoming[idx] = item
-	ch.incoming_used++
-	if ch.incoming_end <= item.header.SN {
-		ch.incoming_end = item.header.SN + 1
+	ch.incomingUsed++
+	if ch.incomingEnd <= item.header.SN {
+		ch.incomingEnd = item.header.SN + 1
 	}
 }
 
 // when do ack incoming packets
-func (ch *enet_channel) incoming_ack(sn uint32) {
-	if sn < ch.incoming_begin || sn >= ch.incoming_end { // reack packet not in wnd
+func (ch *EnetChannel) incomingACK(sn uint32) {
+	if sn < ch.incomingBegin || sn >= ch.incomingEnd { // reack packet not in wnd
 		return
 	}
-	idx := sn % channel_packet_count
+	idx := sn % channelPacketCount
 	v := ch.incoming[idx]
 	assert(v != nil && v.header.SN == sn)
 	v.acked++
 }
 
 // called after incoming-ack
-func (ch *enet_channel) incoming_slide() (item *enet_channel_item) { // return value may be ignored
-	if ch.incoming_begin >= ch.incoming_end {
+func (ch *EnetChannel) incomingSlide() (item *EnetChannelItem) { // return value may be ignored
+	if ch.incomingBegin >= ch.incomingEnd {
 		return
 	}
-	idx := ch.incoming_begin % channel_packet_count
+	idx := ch.incomingBegin % channelPacketCount
 	v := ch.incoming[idx]
 	if v == nil || v.acked <= 0 { // not received yet
 		return
 	}
-	assert(v.header.SN == ch.incoming_begin)
+	assert(v.header.SN == ch.incomingBegin)
 
 	// merge fragments
-	if v.header.Type == enet_packet_type_fragment {
+	if v.header.Type == EnetpacketTypeFragment {
 		all := true
 		for i := uint32(1); i < v.fragment.Count; i++ {
 			n := ch.incoming[idx+i]
@@ -151,8 +151,8 @@ func (ch *enet_channel) incoming_slide() (item *enet_channel_item) { // return v
 		}
 
 		item = v
-		ch.incoming_begin += v.fragment.Count
-		ch.incoming_used -= v.fragment.Count
+		ch.incomingBegin += v.fragment.Count
+		ch.incomingUsed -= v.fragment.Count
 		for i := uint32(1); i < v.fragment.Count; i++ {
 			item.payload = append(item.payload, ch.incoming[idx+1].payload...)
 			ch.incoming[idx+i] = nil
@@ -162,18 +162,18 @@ func (ch *enet_channel) incoming_slide() (item *enet_channel_item) { // return v
 		return
 	}
 	item = v
-	ch.incoming_begin++
-	ch.incoming_used--
+	ch.incomingBegin++
+	ch.incomingUsed--
 	ch.incoming[idx] = nil
 	return
 }
 
-func (ch *enet_channel) do_send(peer *enet_peer) {
-	if ch.intrans_bytes > peer.wnd_size { // window is overflow
+func (ch *EnetChannel) doSend(peer *Enetpeer) {
+	if ch.intransBytes > peer.wndSize { // window is overflow
 		return
 	}
-	for item := ch.outgoing_do_trans(); item != nil; item = ch.outgoing_do_trans() {
-		peer.do_send(item.header, item.fragment, item.payload)
+	for item := ch.outgoingDoTrans(); item != nil; item = ch.outgoingDoTrans() {
+		peer.doSend(item.header, item.fragment, item.payload)
 		item.retries++
 	}
 }

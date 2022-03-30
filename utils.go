@@ -3,7 +3,7 @@ package enet
 import "time"
 
 // unixtime millisecond
-func unixtime_now() int64 {
+func unixtimeNow() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 

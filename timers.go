@@ -4,65 +4,65 @@ import (
 	"container/heap"
 )
 
-type enet_timer_callback func()
-type enet_timer_item struct {
+type EnetTimerCallback func()
+type EnetTimerItem struct {
 	weight   int64
-	callback enet_timer_callback
+	callback EnetTimerCallback
 	index    int // heap index
 }
-type priority_queue []*enet_timer_item
-type enet_timer_queue struct{ *priority_queue }
+type priorityQueue []*EnetTimerItem
+type EnetTimerQueue struct{ *priorityQueue }
 
 // sort interface
 
-func (self priority_queue) Len() int           { return len(self) }
-func (self priority_queue) Less(i, j int) bool { return self[i].weight < self[j].weight }
-func (self priority_queue) Swap(i, j int) {
-	self[i], self[j] = self[j], self[i]
-	self[i].index = i
-	self[j].index = j
+func (pq priorityQueue) Len() int           { return len(pq) }
+func (pq priorityQueue) Less(i, j int) bool { return pq[i].weight < pq[j].weight }
+func (pq priorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index = i
+	pq[j].index = j
 }
 
 // heap interface
 
-func (self *priority_queue) Push(x interface{}) {
-	v := x.(*enet_timer_item)
-	v.index = len(*self)
-	*self = append(*self, v)
+func (pq *priorityQueue) Push(x interface{}) {
+	v := x.(*EnetTimerItem)
+	v.index = len(*pq)
+	*pq = append(*pq, v)
 }
 
-func (self *priority_queue) Pop() interface{} {
-	l := len(*self)
-	v := (*self)[l-1]
-	*self = (*self)[:l-1]
+func (pq *priorityQueue) Pop() interface{} {
+	l := len(*pq)
+	v := (*pq)[l-1]
+	*pq = (*pq)[:l-1]
 	v.index = -1
 	return v
 }
 
 // timer queue interface
-func new_enet_timer_queue() enet_timer_queue {
-	timers := make(priority_queue, 0)
+func newEnetTimerQueue() EnetTimerQueue {
+	timers := make(priorityQueue, 0)
 	heap.Init(&timers)
-	return enet_timer_queue{&timers}
+	return EnetTimerQueue{&timers}
 }
-func (timers enet_timer_queue) push(deadline int64, cb enet_timer_callback) *enet_timer_item {
-	v := &enet_timer_item{deadline, cb, -1}
+func (timers EnetTimerQueue) push(deadline int64, cb EnetTimerCallback) *EnetTimerItem {
+	v := &EnetTimerItem{deadline, cb, -1}
 	heap.Push(timers, v)
 	return v
 }
 
-func (timers enet_timer_queue) pop(now int64) enet_timer_callback {
+func (timers EnetTimerQueue) pop(now int64) EnetTimerCallback {
 	if timers.Len() == 0 {
 		return nil
 	}
-	if (*timers.priority_queue)[0].weight < now {
-		top := heap.Pop(timers).(*enet_timer_item)
+	if (*timers.priorityQueue)[0].weight < now {
+		top := heap.Pop(timers).(*EnetTimerItem)
 		return top.callback
 	}
 	return nil
 }
 
-func (timers enet_timer_queue) remove(idx int) {
+func (timers EnetTimerQueue) remove(idx int) {
 	assert(idx < timers.Len())
 	heap.Remove(timers, idx)
 }
