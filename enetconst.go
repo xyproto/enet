@@ -26,22 +26,22 @@ const (
 )
 
 const (
-	EnetdefaultMtu              = 1400
-	EnetdefaultWndsize          = 0x8000 // bytes
-	EnetdefaultChannelCount     = 2
-	EnetdefaultThrottleInterval = 5000 // ms
-	EnetdefaultThrottleAcce     = 2
-	EnetdefaultThrottleDece     = 2
-	EnetdefaultTickMs           = 20  // ms
-	EnetdefaultRtt              = 500 //ms
-	EnetudpSize                 = 65536
-	EnetdefaultThrottle         = 32
-	EnetthrottleScale           = 32
-	EnettimeoutLimit            = 32   // 30 seconds
-	EnettimeoutMin              = 5000 // 5 second
-	EnettimeoutMax              = 30000
-	EnetpingInterval            = 1000 // 1 second
-	EnetbpsInterval             = 1000 // 1 second
+	DefaultMtu              = 1400
+	DefaultWndsize          = 0x8000 // bytes
+	DefaultChannelCount     = 2
+	DefaultThrottleInterval = 5000 // ms
+	DefaultThrottleAcce     = 2
+	DefaultThrottleDece     = 2
+	DefaultTickMs           = 20  // ms
+	DefaultRtt              = 500 //ms
+	EnetudpSize             = 65536
+	DefaultThrottle         = 32
+	ThrottleScale           = 32
+	EnettimeoutLimit        = 32   // 30 seconds
+	EnettimeoutMin          = 5000 // 5 second
+	EnettimeoutMax          = 30000
+	EnetpingInterval        = 1000 // 1 second
+	EnetbpsInterval         = 1000 // 1 second
 )
 
 const (

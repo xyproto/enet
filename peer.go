@@ -22,7 +22,7 @@ type Peer struct {
 	flags            int
 	wndSize          uint32 // bytes, calculated by throttle and wndBytes
 	intransBytes     int
-	channel          [EnetdefaultChannelCount + 1]Channel
+	channel          [DefaultChannelCount + 1]Channel
 	remoteAddr       *net.UDPAddr
 	rcvdBytes        int
 	sentBytes        int
@@ -51,17 +51,17 @@ func newPeer(addr *net.UDPAddr, host *EnetHost) *Peer {
 	return &Peer{
 		clientid:         cid,
 		flags:            0,
-		mtu:              EnetdefaultMtu,
-		wndSize:          EnetdefaultWndsize,
-		chanCount:        EnetdefaultChannelCount,
-		throttle:         EnetdefaultThrottle,
-		throttleInterval: EnetdefaultThrottleInterval,
-		throttleAcce:     EnetdefaultThrottleAcce,
-		throttleDece:     EnetdefaultThrottleDece,
+		mtu:              DefaultMtu,
+		wndSize:          DefaultWndsize,
+		chanCount:        DefaultChannelCount,
+		throttle:         DefaultThrottle,
+		throttleInterval: DefaultThrottleInterval,
+		throttleAcce:     DefaultThrottleAcce,
+		throttleDece:     DefaultThrottleDece,
 		rcvTimeo:         5000,
-		rtt:              EnetdefaultRtt,
-		lastRtt:          EnetdefaultRtt,
-		lowestRtt:        EnetdefaultRtt,
+		rtt:              DefaultRtt,
+		lastRtt:          DefaultRtt,
+		lowestRtt:        DefaultRtt,
 		rttEpoc:          0, // may expire as soon as fast
 		throttleEpoc:     0, // may expire immediately
 		timeoutLimit:     EnettimeoutLimit,
@@ -87,7 +87,7 @@ func (peer *Peer) doSend(hdr PacketHeader, frag PacketFragment, dat []byte) {
 
 func (peer *Peer) channelFromID(cid uint8) *Channel {
 	if cid >= peer.chanCount {
-		return &peer.channel[EnetdefaultChannelCount]
+		return &peer.channel[DefaultChannelCount]
 	}
 	v := &peer.channel[cid]
 	return v
@@ -101,7 +101,7 @@ func peerWindowIsEmpty(peer *Peer) bool {
 	return peer.intransBytes == 0
 }
 
-func (peer *Peer) whenEnetincomingACK(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingACK(header PacketHeader, payload []byte) {
 	if peer.flags&PeerFlagsStopped != 0 {
 		return
 	}
@@ -162,7 +162,7 @@ func (peer *Peer) reset() {}
 
 func (peer *Peer) handshake(syn PacketSyn) {}
 
-func (peer *Peer) whenEnetincomingSyn(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingSyn(header PacketHeader, payload []byte) {
 	debugf("peer in-syn %v\n", peer.remoteAddr)
 	reader := bytes.NewReader(payload)
 	var syn PacketSyn
@@ -185,7 +185,7 @@ func (peer *Peer) whenEnetincomingSyn(header PacketHeader, payload []byte) {
 	peer.outgoingPend(ch, phdr, PacketFragment{}, PacketSynackEncode(synack))
 }
 
-func (peer *Peer) whenEnetincomingSynack(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingSynack(header PacketHeader, payload []byte) {
 	debugf("peer in-synack %v\n", peer.remoteAddr)
 	reader := bytes.NewReader(payload)
 	var syn PacketSyn
@@ -204,7 +204,7 @@ func (peer *Peer) whenEnetincomingSynack(header PacketHeader, payload []byte) {
 	}
 }
 
-func (peer *Peer) whenEnetincomingFin(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingFin(header PacketHeader, payload []byte) {
 	debugf("peer in-fin %v\n", peer.remoteAddr)
 	if peer.flags&PeerFlagsFinSending != 0 {
 		// needn't do anything, just wait for self fin's ack
@@ -216,9 +216,9 @@ func (peer *Peer) whenEnetincomingFin(header PacketHeader, payload []byte) {
 	peer.host.timers.push(peer.host.now+peer.rttTimeo*2, func() { peer.host.destroyPeer(peer) })
 }
 
-func (peer *Peer) whenEnetincomingPing(header PacketHeader, payload []byte) {}
+func (peer *Peer) whenIncomingPing(header PacketHeader, payload []byte) {}
 
-func (peer *Peer) whenEnetincomingReliable(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingReliable(header PacketHeader, payload []byte) {
 	debugf("peer in-reliable %v\n", peer.remoteAddr)
 	if peer.flags&PeerFlagsEstablished == 0 {
 		return
@@ -234,7 +234,7 @@ func (peer *Peer) whenEnetincomingReliable(header PacketHeader, payload []byte) 
 	}
 }
 
-func (peer *Peer) whenEnetincomingFragment(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingFragment(header PacketHeader, payload []byte) {
 	debugf("peer in-frag %v\n", peer.remoteAddr)
 	reader := bytes.NewReader(payload)
 	var frag PacketFragment
@@ -253,7 +253,7 @@ func (peer *Peer) whenEnetincomingFragment(header PacketHeader, payload []byte) 
 	}
 }
 
-func (peer *Peer) whenEnetincomingUnrelialbe(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingUnrelialbe(header PacketHeader, payload []byte) {
 	debugf("peer in-unreliable %v\n", peer.remoteAddr)
 	reader := bytes.NewReader(payload)
 	var ur PacketUnreliable
@@ -266,7 +266,7 @@ func (peer *Peer) whenEnetincomingUnrelialbe(header PacketHeader, payload []byte
 func (peer *Peer) whenUnknown(header PacketHeader, payload []byte) {
 	debugf("peer skipped packet : %v\n", header.Type)
 }
-func (peer *Peer) whenEnetincomingEg(header PacketHeader, payload []byte) {
+func (peer *Peer) whenIncomingEg(header PacketHeader, payload []byte) {
 	debugf("peer in-eg %v\n", peer.remoteAddr)
 
 }
@@ -312,11 +312,11 @@ func (peer *Peer) updateRtt(rtt int64) {
 func (peer *Peer) updateThrottle(rtt int64) {
 	// unstable network
 	if peer.lastRtt <= peer.lastRttv {
-		peer.throttle = EnetthrottleScale
+		peer.throttle = ThrottleScale
 		return
 	}
 	if rtt < peer.lastRtt {
-		peer.throttle = minui32(peer.throttle+peer.throttleAcce, EnetthrottleScale)
+		peer.throttle = minui32(peer.throttle+peer.throttleAcce, ThrottleScale)
 		return
 	}
 	if rtt > peer.lastRtt+peer.lastRttv<<1 {
@@ -325,7 +325,7 @@ func (peer *Peer) updateThrottle(rtt int64) {
 }
 
 func (peer *Peer) updateWindowSize() {
-	peer.wndSize = peer.wndBytes * peer.throttle / EnetthrottleScale
+	peer.wndSize = peer.wndBytes * peer.throttle / ThrottleScale
 }
 
 func (peer *Peer) updateStatis(itv int) {

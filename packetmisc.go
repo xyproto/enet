@@ -22,14 +22,14 @@ func PacketACKEncode(ack PacketAck) []byte {
 // Complete PacketHeader filling, no specific packetheader filling
 func PacketSynDefault() (hdr PacketHeader, syn PacketSyn) {
 	syn.PeerID = 0
-	syn.MTU = EnetdefaultMtu
-	syn.WndSize = EnetdefaultWndsize
-	syn.ChannelCount = EnetdefaultChannelCount
+	syn.MTU = DefaultMtu
+	syn.WndSize = DefaultWndsize
+	syn.ChannelCount = DefaultChannelCount
 	syn.RcvBandwidth = 0
 	syn.SndBandwidth = 0
-	syn.ThrottleInterval = EnetdefaultThrottleInterval
-	syn.ThrottleAcce = EnetdefaultThrottleAcce
-	syn.ThrottleDece = EnetdefaultThrottleDece
+	syn.ThrottleInterval = DefaultThrottleInterval
+	syn.ThrottleAcce = DefaultThrottleAcce
+	syn.ThrottleDece = DefaultThrottleDece
 
 	hdr.Type = PacketTypeSyn
 	hdr.Flags = PacketHeaderFlagsNeedack

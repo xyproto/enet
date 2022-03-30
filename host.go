@@ -43,7 +43,7 @@ func NewHost(addr string) (Host, error) {
 		addr:     ep,
 		incoming: make(chan *EnetHostIncomingCommand, 16),
 		outgoing: make(chan *EnetHostOutgoingCommand, 16),
-		tick:     time.Tick(time.Millisecond * EnetdefaultTickMs),
+		tick:     time.Tick(time.Millisecond * DefaultTickMs),
 		peers:    make(map[string]*Peer),
 		timers:   newTimerQueue(),
 	}
@@ -314,18 +314,18 @@ type whenPacketIncomingDisp func(peer *Peer, hdr PacketHeader, payload []byte)
 
 var WhenPacketIncomingDisp = []whenPacketIncomingDisp{
 	(*Peer).whenUnknown,
-	(*Peer).whenEnetincomingACK,
-	(*Peer).whenEnetincomingSyn,
-	(*Peer).whenEnetincomingSynack,
-	(*Peer).whenEnetincomingFin,
-	(*Peer).whenEnetincomingPing,
-	(*Peer).whenEnetincomingReliable,
-	(*Peer).whenEnetincomingUnrelialbe,
-	(*Peer).whenEnetincomingFragment,
+	(*Peer).whenIncomingACK,
+	(*Peer).whenIncomingSyn,
+	(*Peer).whenIncomingSynack,
+	(*Peer).whenIncomingFin,
+	(*Peer).whenIncomingPing,
+	(*Peer).whenIncomingReliable,
+	(*Peer).whenIncomingUnrelialbe,
+	(*Peer).whenIncomingFragment,
 	(*Peer).whenUnknown,
 	(*Peer).whenUnknown,
 	(*Peer).whenUnknown,
-	(*Peer).whenEnetincomingEg,
+	(*Peer).whenIncomingEg,
 	(*Peer).whenUnknown,
 }
 
