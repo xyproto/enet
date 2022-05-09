@@ -4,14 +4,19 @@ import (
 	"container/heap"
 )
 
-type TimerCallback func()
-type TimerItem struct {
-	weight   int64
-	callback TimerCallback
-	index    int // heap index
-}
-type priorityQueue []*TimerItem
-type TimerQueue struct{ *priorityQueue }
+type (
+	TimerCallback func()
+
+	TimerItem struct {
+		weight   int64
+		callback TimerCallback
+		index    int // heap index
+	}
+
+	priorityQueue []*TimerItem
+
+	TimerQueue struct{ *priorityQueue }
+)
 
 // sort interface
 
@@ -45,6 +50,7 @@ func newTimerQueue() TimerQueue {
 	heap.Init(&timers)
 	return TimerQueue{&timers}
 }
+
 func (timers TimerQueue) push(deadline int64, cb TimerCallback) *TimerItem {
 	v := &TimerItem{deadline, cb, -1}
 	heap.Push(timers, v)

@@ -46,7 +46,7 @@ const (
 
 const (
 	ChannelIDNone uint8 = 0xff
-	ChannelIDAll        = 0xfe
+	ChannelIDAll  uint8 = 0xfe
 )
 
 const (
